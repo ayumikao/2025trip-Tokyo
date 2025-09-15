@@ -31,6 +31,7 @@
   .poi-link{color:#b7d2ff;text-decoration:none;border-bottom:1px dotted #517bd9}
   footer{padding:20px;color:#8ea2c8;text-align:center}
   .badge{display:inline-block;padding:2px 8px;border:1px solid #28406d;border-radius:999px;font-size:12px;color:#9fc0ff;margin-left:6px}
+  #err{margin:0 14px 14px;color:#ffaeae;font-size:12px}
 </style>
 </head>
 <body>
@@ -46,7 +47,7 @@
 
 <main class="container">
   <section class="card">
-    <iframe id="mapFrame" src="map-2025-09-20-from-csv-v4-bridge.html" loading="lazy"></iframe>
+    <iframe id="mapFrame" src="map-2025-09-20-from-csv-v4-bridge-bomfix.html" loading="lazy"></iframe>
   </section>
   <aside class="card right">
     <div class="section-title">照片牆</div>
@@ -60,129 +61,75 @@
   <div class="hint">資料來自：<code>timeline-2025-09-20_v4.csv</code></div>
   <div id="timeline"></div>
 </section>
-
+<p id="err"></p>
 <footer>© 2025 Ayumi 行程地圖</footer>
 
 <script>
-const DAY_CFG = {
-  "2025-09-20": {
-    map: "map-2025-09-20-from-csv-v4-bridge.html",
-    photosCSV: "photos-2025-09-20-mapped.csv",
-    timelineCSV: "timeline-2025-09-20_v4.csv"
-  }
-};
+const DAY_CFG = {"2025-09-20":{map:"map-2025-09-20-from-csv-v4-bridge-bomfix.html",photosCSV:"photos-2025-09-20-mapped.csv",timelineCSV:"timeline-2025-09-20_v4.csv"}};
 
-// --- CSV parser ---
 function parseCSV(text){
   const rows = []; let row = [], field = '', inQuotes = false;
   for(let i=0;i<text.length;i++){
     const c = text[i], n = text[i+1];
-    if(c === '"'){
-      if(inQuotes && n === '"'){ field += '"'; i++; } else inQuotes = !inQuotes;
-    } else if(c === ',' && !inQuotes){
-      row.push(field); field='';
-    } else if((c === '\\n' || c === '\\r') && !inQuotes){
+    if(c === '"'){ if(inQuotes && n === '"'){ field += '"'; i++; } else inQuotes = !inQuotes; }
+    else if(c === ',' && !inQuotes){ row.push(field); field=''; }
+    else if((c === '\n' || c === '\r') && !inQuotes){
       if(field !== '' || row.length){ row.push(field); rows.push(row); row=[]; field=''; }
-      if(c === '\\r' && n === '\\n'){ i++; }
+      if(c === '\r' && n === '\n'){ i++; }
     } else { field += c; }
   }
   if(field !== '' || row.length){ row.push(field); rows.push(row); }
-  const header = rows.shift().map(h=>h.trim());
+  let header = rows.shift() || [];
+  header = header.map(h => (h||'').replace(/^\uFEFF/,'').trim()); // BOM
   return rows.filter(r=>r.length && r.some(x=>x && x.trim()!=='')).map(cols => {
-    const o = {}; header.forEach((h,i)=> o[h] = (cols[i]||'').trim()); return o;
+    const obj = {}; header.forEach((h,i)=> obj[h] = (cols[i]||'').trim()); return obj;
   });
 }
-
-function normalizeTitle(t){ return (t||"").replace(/^[0-9①-⑳\\.\\s]+/g,'').trim(); }
-
-// --- Photo wall ---
-let photosData = [];
+function normalizeTitle(t){ return (t||"").replace(/^[0-9①-⑳\.\s]+/g,'').trim(); }
+function pick(row, names){
+  const keys = Object.keys(row).map(k=>k.replace(/\s/g,'').replace(/\uFEFF/g,''));
+  for(const cand of names){
+    const want = cand.replace(/\s/g,'');
+    for(let i=0;i<keys.length;i++){ if(keys[i]===want) return row[Object.keys(row)[i]]; }
+  } return "";
+}
+let photosData=[];
 async function loadPhotos(csvPath){
-  const res = await fetch(csvPath); const text = await res.text();
-  photosData = parseCSV(text);
+  const r=await fetch(csvPath); if(!r.ok){document.getElementById('err').textContent='照片CSV載入失敗：'+r.status; return;}
+  const t=await r.text(); photosData=parseCSV(t);
 }
-
 function renderPhotos(place){
-  const g = document.getElementById('gallery');
-  const hint = document.getElementById('hint');
-  g.innerHTML = '';
-  const title = normalizeTitle(place);
-  const rows = photosData.filter(r => normalizeTitle(r["對應地點"]) === title);
-  if(!rows.length){
-    hint.textContent = `這個景點暫無相片：${title}`;
-    g.classList.add('hidden');
-    return;
-  }
-  hint.textContent = `${title} 的相片：`;
-  g.classList.remove('hidden');
-  for(const r of rows){
-    const div = document.createElement('div'); div.className='ph';
-    div.innerHTML = `<img loading="lazy" alt="${r.title||title}" src="${r.image}">`;
-    g.appendChild(div);
-  }
+  const g=document.getElementById('gallery'); const hint=document.getElementById('hint');
+  g.innerHTML=''; const title=normalizeTitle(place);
+  const rows=photosData.filter(r => normalizeTitle(r["對應地點"])===title);
+  if(!rows.length){ hint.textContent=`這個景點暫無相片：${title}`; g.classList.add('hidden'); return; }
+  hint.textContent=`${title} 的相片：`; g.classList.remove('hidden');
+  for(const r of rows){ const div=document.createElement('div'); div.className='ph'; div.innerHTML=`<img loading="lazy" alt="${r.title||title}" src="${r.image}">`; g.appendChild(div); }
 }
-
-// --- Timeline ---
 async function loadTimeline(csvPath){
-  const res = await fetch(csvPath); const text = await res.text();
-  const rows = parseCSV(text);
-  const wrap = document.getElementById('timeline');
-  const tbl = document.createElement('table');
-  const thead = document.createElement('thead');
-  thead.innerHTML = `<tr><th>時間</th><th>地點 / 活動</th><th>備註</th><th>類別</th></tr>`;
-  tbl.appendChild(thead);
-  const tb = document.createElement('tbody');
-  for(const r of rows){
-    const time = (r["時間起"]||"") + (r["時間迄"]?`–${r["時間迄"]}`:"");
-    let place = r["地點 / 活動"]||"";
-    let link = r["📍 景點連結"];
-    const linkHtml = link?`<a class="poi-link" target="_blank" href="${link}">📍</a>`:"";
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${time}</td><td>${place} ${linkHtml}</td><td class="muted">${r["備註"]||""}</td><td class="muted">${r["類別"]||""}</td>`;
+  const r=await fetch(csvPath); if(!r.ok){document.getElementById('err').textContent='時間軸CSV載入失敗：'+r.status; return;}
+  const t=await r.text(); const rows=parseCSV(t);
+  const wrap=document.getElementById('timeline'); const tbl=document.createElement('table');
+  tbl.innerHTML='<thead><tr><th>時間</th><th>地點 / 活動</th><th>備註</th><th>類別</th></tr></thead>'; const tb=document.createElement('tbody');
+  for(const row of rows){
+    const time=(pick(row,["時間起"])||"") + ((pick(row,["時間迄"])||"")?`–${pick(row,["時間迄"])}`:"");
+    const place=pick(row,["地點/活動"])||row["地點 / 活動"]||""; const link=pick(row,["📍景點連結"])||row["📍 景點連結"]||"";
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${time}</td><td>${place} ${link?`<a class="poi-link" target="_blank" href="${link}">📍</a>`:""}</td><td class="muted">${pick(row,["備註"])||""}</td><td class="muted">${pick(row,["類別"])||""}</td>`;
     tb.appendChild(tr);
-  }
-  tbl.appendChild(tb);
-  wrap.innerHTML='';
-  wrap.appendChild(tbl);
+  } tbl.appendChild(tb); wrap.innerHTML=''; wrap.appendChild(tbl);
 }
-
-// --- Tabs ---
-document.querySelectorAll('.tab').forEach(el => {
-  el.addEventListener('click', () => {
-    const day = el.dataset.day;
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    el.classList.add('active');
-    const cfg = DAY_CFG[day];
-    const iframe = document.getElementById('mapFrame');
-    if(cfg){
-      iframe.src = cfg.map;
-      loadPhotos(cfg.photosCSV);
-      loadTimeline(cfg.timelineCSV);
-      document.getElementById('gallery').classList.add('hidden');
-      document.getElementById('hint').textContent = "在左邊地圖點選任一景點標記，我會顯示該景點的相簿。";
-    }else{
-      iframe.src = "about:blank";
-      document.getElementById('timeline').innerHTML = "<div class='muted'>這一天尚未建置</div>";
-      document.getElementById('gallery').classList.add('hidden');
-      document.getElementById('hint').textContent = "此日期尚未建置";
-    }
+// tabs
+document.querySelectorAll('.tab').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const day=el.dataset.day; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
+    const cfg=DAY_CFG[day]; const iframe=document.getElementById('mapFrame');
+    if(cfg){ iframe.src=cfg.map; loadPhotos(cfg.photosCSV); loadTimeline(cfg.timelineCSV); document.getElementById('gallery').classList.add('hidden'); document.getElementById('hint').textContent="在左邊地圖點選任一景點標記，我會顯示該景點的相簿。"; }
+    else{ iframe.src="about:blank"; document.getElementById('timeline').innerHTML="<div class='muted'>這一天尚未建置</div>"; document.getElementById('gallery').classList.add('hidden'); document.getElementById('hint').textContent="此日期尚未建置"; }
   });
 });
-
-// --- Message bridge from map iframe ---
-window.addEventListener('message', (ev) => {
-  const d = ev.data || {};
-  if(d.type === 'marker-click' && d.place){
-    renderPhotos(d.place);
-  }
-});
-
-// Init default day
-(async () => {
-  const cfg = DAY_CFG["2025-09-20"];
-  await loadPhotos(cfg.photosCSV);
-  await loadTimeline(cfg.timelineCSV);
-})();
+window.addEventListener('message',(ev)=>{ const d=ev.data||{}; if(d.type==='marker-click' && d.place){ renderPhotos(d.place); } });
+(async()=>{ const cfg=DAY_CFG["2025-09-20"]; await loadPhotos(cfg.photosCSV); await loadTimeline(cfg.timelineCSV); })();
 </script>
 </body>
 </html>
