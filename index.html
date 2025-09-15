@@ -1,271 +1,106 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>行程總覽｜日期切換的互動地圖 + 時間軸</title>
-
-  <!-- Leaflet 地圖（CDN） -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-  <style>
-    :root{
-      --primary:#2563eb;
-      --accent:#22c55e;
-      --bg:#0b1022;
-      --card:#0f172a;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --ring: rgba(37,99,235,.35);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans TC", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
-      color:var(--text);
-      background: radial-gradient(1200px 600px at 80% -10%, #1f2937 0%, #0b1022 50%, #010409 100%);
-    }
-    header{
-      position:sticky; top:0; z-index:50;
-      backdrop-filter: blur(8px);
-      background: rgba(2,6,23,.6);
-      border-bottom:1px solid rgba(255,255,255,.06);
-    }
-    .wrap{max-width:1080px;margin:0 auto;padding:16px}
-    nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
-    .brand{display:flex;align-items:center;gap:10px}
-    .brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent)); box-shadow:0 0 12px var(--ring)}
-    .brand h1{font-size:18px;margin:0}
-    .navlinks{display:flex;gap:8px;flex-wrap:wrap}
-    .navlinks a{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:10px}
-    .navlinks a:hover{color:white;background:rgba(255,255,255,.06)}
-
-    main .section{padding:28px 16px}
-    .hero{text-align:center;padding:56px 16px 12px;}
-    .hero h2{margin:0 0 8px 0;font-size:clamp(22px,3.2vw,34px)}
-    .hero p{margin:0;color:var(--muted)}
-
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:16px; padding:16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-    }
-    .grid{display:grid;gap:16px}
-    @media(min-width:960px){ .grid{grid-template-columns: 1.25fr .75fr}}
-
-    /* 日期按鈕 */
-    .datebar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 0}
-    .datebtn{
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      color:#c7d2fe;
-      padding:10px 14px; border-radius:12px; cursor:pointer;
-      transition: all .18s ease;
-    }
-    .datebtn:hover{transform:translateY(-1px); box-shadow:0 8px 18px var(--ring)}
-    .datebtn.active{background:linear-gradient(135deg,var(--primary),var(--accent)); color:white; border-color:transparent}
-
-    /* 地圖與說明 */
-    #map{height:520px;border-radius:12px;overflow:hidden}
-    .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:14px;color:var(--muted)}
-    .pill{border:1px solid rgba(255,255,255,.12); padding:4px 10px;border-radius:999px}
-
-    /* 時間軸 */
-    .timeline{position:relative;padding:8px 0 8px 18px}
-    .timeline::before{
-      content:""; position:absolute; left:6px; top:0; bottom:0; width:4px;
-      background: linear-gradient(var(--primary), var(--accent));
-      border-radius:4px;
-    }
-    .titem{
-      position:relative; margin:14px 0; padding:12px 12px 12px 16px;
-      background: rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:12px;
-    }
-    .titem::before{
-      content:""; position:absolute; left:-2px; top:18px; width:10px; height:10px; border-radius:50%;
-      background: white; box-shadow:0 0 0 6px var(--ring);
-    }
-    time{color:#c7d2fe; font-weight:600}
-    .muted{color:var(--muted)}
-
-    footer{padding:32px 16px; text-align:center; color:var(--muted)}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>9/20 澀谷 → 鎌倉 全天互動地圖</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  html,body,#map{height:100%;margin:0}
+  .legend{background:#fff;padding:8px 10px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);font:12px/1.4 system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .card{font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;min-width:220px}
+  .card h3{margin:0 0 6px;font-size:16px}
+  .card .meta{color:#667;font-size:12px;margin-bottom:6px}
+  .tag{display:inline-block;border:1px solid #ccd;padding:2px 6px;border-radius:999px;font-size:12px;text-decoration:none;color:#223;margin-right:6px;margin-top:4px}
+  .muted{color:#789}
+</style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <nav>
-        <div class="brand">
-          <span class="dot"></span>
-          <h1>Ayumi Trip 2025</h1>
-        </div>
-        <div class="navlinks">
-          <a href="#mapsec">互動地圖</a>
-          <a href="#timeline">時間軸</a>
-        </div>
-      </nav>
-    </div>
-  </header>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Base map
+var map = L.map('map').setView([35.318,139.55], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
 
-  <main>
-    <section class="hero">
-      <h2>澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</h2>
-      <p>點下方日期按鈕，會切換到對應的「互動地圖」與「時間軸」。</p>
-      <div class="datebar" id="datebar">
-        <button class="datebtn" data-day="2025-09-20">9/20</button>
-        <button class="datebtn" data-day="2025-09-21">9/21</button>
-        <button class="datebtn" data-day="2025-09-22">9/22</button>
-        <button class="datebtn" data-day="2025-09-23">9/23</button>
-      </div>
-    </section>
+// Groups
+var gMain = L.layerGroup().addTo(map);
+var gOptional = L.layerGroup().addTo(map);
+var gToilet = L.layerGroup().addTo(map);
 
-    <section id="mapsec" class="section">
-      <div class="wrap grid">
-        <div class="card">
-          <div id="map"></div>
-          <div class="legend">
-            <span class="pill">🔵 依日期顯示對應景點與路線</span>
-            <span class="pill">📍 點標記看備註</span>
-            <span class="pill">🧭 雙指縮放或滑鼠滾輪</span>
-          </div>
-        </div>
-        <div class="card">
-          <h3 style="margin-top:0">當日摘要</h3>
-          <div id="daySummary" class="muted">請從上方選擇日期。</div>
-          <h3>時間軸</h3>
-          <div id="timeline" class="timeline"></div>
-        </div>
-      </div>
-    </section>
-  </main>
+// Icons
+function icon(color){ return L.divIcon({
+  className:'',
+  html:`<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="12" fill="white" stroke="${color}" stroke-width="2"/>
+  <circle cx="14" cy="14" r="6" fill="${color}"/></svg>`,
+  iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[0,-10]
+});}
+var icMain = icon('#2E86DE');
+var icOptional = icon('#9B59B6');
+var icToilet = icon('#27AE60');
 
-  <footer>
-    <div class="wrap">© 2025 Ayumi</div>
-  </footer>
+// Helper
+function addStop(group, lat, lng, title, time, htmlMore){
+  var p = L.marker([lat,lng], {icon: group===gOptional?icOptional:icMain}).addTo(group);
+  p.bindPopup(`<div class="card"><h3>${title}</h3><div class="meta">${time||''}</div>${htmlMore||''}</div>`);
+  return p;
+}
+function addToilet(lat,lng,title,desc,link){
+  var p = L.marker([lat,lng], {icon: icToilet}).addTo(gToilet);
+  var linkHtml = link?`<a class="tag" target="_blank" href="${link}">📍 Google 地圖</a>`:'';
+  p.bindPopup(`<div class="card"><h3>🚻 ${title}</h3><div class="meta">${desc||''}</div>${linkHtml}</div>`);
+}
 
-  <script>
-    // ---- 行程資料：每一天的地點（近似座標）與時間軸 ----
-    const PLAN = {
-      "2025-09-20": {
-        label: "9/20 澀谷 → 鎌倉",
-        points: [
-          { name:"澀谷站（出發）", coords:[35.659, 139.700], note:"集合點，可改為你的飯店座標。" },
-          { name:"葛原岡神社", coords:[35.3309, 139.5406], note:"清晨拍神社與鳥居。" },
-          { name:"佐助稻荷神社", coords:[35.3303, 139.5445], note:"紅色鳥居隧道，熱門私房點。" },
-          { name:"鎌倉高校前平交道", coords:[35.3110, 139.5350], note:"灌籃高手景，建議避開尖峰。" },
-          { name:"長谷寺", coords:[35.3153, 139.5355], note:"庭園＋觀景台。" },
-          { name:"鎌倉大佛（高德院）", coords:[35.3167, 139.5352], note:"地標景點。" },
-          { name:"鶴岡八幡宮", coords:[35.3260, 139.5567], note:"晚段順遊，小町通可覓食。" }
-        ],
-        timeline: [
-          { t:"06:30", text:"澀谷出發（包車）" },
-          { t:"08:00", text:"葛原岡神社／佐助稻荷 拍攝" },
-          { t:"10:30", text:"江之電沿線 → 鎌倉高校前平交道" },
-          { t:"13:00", text:"長谷寺 → 鎌倉大佛" },
-          { t:"16:00", text:"鶴岡八幡宮／小町通散步" }
-        ]
-      },
-      "2025-09-21": {
-        label: "9/21 箱根",
-        points: [
-          { name:"桃源台站（停車）", coords:[35.2637, 139.0198], note:"停車 → 纜車起點。" },
-          { name:"大涌谷", coords:[35.2420, 139.0210], note:"黑蛋／火山地貌，注意風向與天候。" },
-          { name:"早雲山", coords:[35.2420, 139.0460], note:"纜車端點，可轉強羅。" },
-          { name:"Naraya Cafe（強羅）", coords:[35.2426, 139.0418], note:"足湯＋點心，親子友善。" },
-          { name:"和平鳥居（箱根神社 湖中鳥居）", coords:[35.2065, 139.0264], note:"熱門拍照點，建議早去。" }
-        ],
-        timeline: [
-          { t:"09:30", text:"抵達桃源台 → 搭纜車玩大涌谷一圈" },
-          { t:"12:00", text:"Naraya Cafe 足湯休息" },
-          { t:"14:00", text:"箱根神社／和平鳥居（湖畔散策）" },
-          { t:"17:00", text:"返回停車場，前往住宿點" }
-        ]
-      },
-      "2025-09-22": {
-        label: "9/22 熱海 → 伊豆半島",
-        points: [
-          { name:"熱海", coords:[35.097, 139.077], note:"海景溫泉，可安排 BBQ 的獨棟住宿。" },
-          { name:"伊東（示意）", coords:[34.969, 139.103], note:"海線風景佳，親子友善海濱公園多。" },
-          { name:"下田（示意）", coords:[34.676, 138.944], note:"白濱海岸一帶，開車兜風拍照。" },
-          { name:"河津（示意）", coords:[34.745, 138.954], note:"若往北回程可路過採買。" }
-        ],
-        timeline: [
-          { t:"上午", text:"熱海海景飯店休息／泡湯／可 BBQ（依住宿規定）" },
-          { t:"下午", text:"沿海線自駕：熱海 → 伊東 → 下田 → 河津（視體力調整）" }
-        ]
-      },
-      "2025-09-23": {
-        label: "9/23 預留（可加 河口湖 或 返程）",
-        points: [
-          { name:"（待規劃）", coords:[35.659, 139.700], note:"此日目前預留，可以替換成河口湖或返程動線。" }
-        ],
-        timeline: [
-          { t:"TBD", text:"此日行程尚未最終化。告訴我要放哪裡，我會更新地圖與時間軸。" }
-        ]
-      }
-    };
+// Main route points (approx coords)
+var pts = [];
+pts.push(addStop(gMain, 35.6580,139.7016, "澀谷出發（包車）", "06:30–08:00", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">預留 1.5 小時車程（含早高峰小堵車）</div>`));
+pts.push(addStop(gMain, 35.3114,139.5341, "① 七高正門前（私人拍照點）", "08:00–08:50", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/tMDZQV2oFisFafeV7">📍 Google 地圖</a><div class="muted">日本神奈川縣鐮倉市 Shichirigahamahigashi, 2 Chome−3</div>`));
+pts.push(addStop(gMain, 35.3069,139.5259, "② 顯証寺（私人拍照點）", "同時段", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/oDdhczm5XfwWtLur6">📍 Google 地圖</a><div class="muted">早光線柔和、人少。🚻 無公廁（需到錢洗弁財天或小町通）。</div>`));
+pts.push(addStop(gMain, 35.3276,139.5221, "③ 湘南深澤站（倒掛鐵路）", "09:00–09:30", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">約 7 分鐘一班車，可拍 3–4 班。🚻 車站內公廁（西口側）。</div>`));
+pts.push(addStop(gMain, 35.3263,139.5469, "④ 錢洗弁財天宇賀福神社", "09:40–10:50", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">水洗錢會發大財；線香+蠟燭+籃子 200 日幣。🚻 入口右側有簡易廁所。</div>`));
+pts.push(addStop(gMain, 35.3213,139.5566, "⑤ 小町通商店街", "11:00–13:30", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">600m 逛街美食。🚻 多處公廁（7-11、LAWSON、商店街公廁）。</div>`));
+pts.push(addStop(gMain, 35.3167,139.5352, "⑥ 高德院（鎌倉大佛）", "13:45–14:45", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">大人 300、小學生 150（現金），+50 可入內部。🚻 寺內與出入口附近有廁所。</div>`));
+pts.push(addStop(gMain, 35.3088,139.4900, "⑦ YAMAKA 江之島店", "15:00–15:50", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">伴手禮購物。🚻 店內有廁所。</div>`));
+pts.push(addStop(gMain, 35.3109,139.4857, "⑧ Rana 片瀬江ノ島（住宿）", "15:55–16:15", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/7SVngCJPpPaxi4Sy6">📍 Google 地圖</a><div class="muted">Check-in 16:00–10:00。</div>`));
+pts.push(addStop(gMain, 35.2988,139.4806, "⑨ 江之島（看夕陽）", "16:50–18:30", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">青銅鳥居入口。手扶梯：大人360/小學生180。傍晚需外套。🚻 島入口、各神社與商店街均有廁所。</div>`));
 
-    // ---- 地圖初始化 ----
-    const map = L.map('map', { scrollWheelZoom: true });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-    const layerGroup = L.layerGroup().addTo(map);
+// Optional stops
+addStop(gOptional, 35.3269,139.5591, "（可有可無）鶴岡八幡宮（抽御手）", "12:50–13:50", `<a class="tag" target="_blank" href="https://maps.app.goo.gl/">📍 Google 地圖</a><div class="muted">境內有公廁。</div>`);
 
-    function renderDay(dayKey){
-      const data = PLAN[dayKey];
-      if(!data) return;
+// Toilets (examples near key areas)
+addToilet(35.3099,139.5277, "7-11 鎌倉七里ガ浜店", "距離七高正門前約 4 分鐘車程；有停車位，廁所對外開放。", "https://maps.app.goo.gl/");
 
-      // 更新摘要
-      document.getElementById('daySummary').textContent = data.label;
+// Polyline route (approximate)
+var latlngs = pts.map(m => m.getLatLng());
+L.polyline(latlngs, {color:'#2E86DE', weight:4, opacity:.8}).addTo(gMain);
 
-      // 先清地圖圖層
-      layerGroup.clearLayers();
+// Fit bounds
+map.fitBounds(L.latLngBounds(latlngs), {padding:[30,30]});
 
-      const latlngs = [];
-      data.points.forEach(p => {
-        latlngs.push(p.coords);
-        L.marker(p.coords).addTo(layerGroup).bindPopup(`<b>${p.name}</b><br>${p.note||""}`);
-      });
+// Controls
+L.control.layers(null, {
+  "主行程": gMain,
+  "可有可無": gOptional,
+  "🚻 廁所": gToilet
+}, {collapsed:false, position:'topleft'}).addTo(map);
 
-      if(latlngs.length >= 2){
-        L.polyline(latlngs, { color: '#4f46e5', weight: 4, opacity: .9 }).addTo(layerGroup);
-        map.fitBounds(L.latLngBounds(latlngs).pad(0.2));
-      } else if(latlngs.length === 1){
-        map.setView(latlngs[0], 12);
-      }
-
-      // 更新時間軸
-      const tl = document.getElementById('timeline');
-      tl.innerHTML = "";
-      data.timeline.forEach(it => {
-        const div = document.createElement('div');
-        div.className = 'titem';
-        div.innerHTML = `<div><time>${it.t}</time> ${it.text}</div>`;
-        tl.appendChild(div);
-      });
-    }
-
-    // ---- 日期按鈕事件 ----
-    const datebar = document.getElementById('datebar');
-    datebar.addEventListener('click', e => {
-      const btn = e.target.closest('.datebtn');
-      if(!btn) return;
-      for(const b of datebar.querySelectorAll('.datebtn')) b.classList.remove('active');
-      btn.classList.add('active');
-      renderDay(btn.dataset.day);
-    });
-
-    // 預設顯示 9/20
-    const defaultBtn = datebar.querySelector('[data-day="2025-09-20"]');
-    defaultBtn.classList.add('active');
-    renderDay("2025-09-20");
-  </script>
+// Legend
+var legend = L.control({position:'bottomleft'});
+legend.onAdd = function(){
+  var div = L.DomUtil.create('div','legend');
+  div.innerHTML = `
+    <div><span class="dot" style="background:#2E86DE"></span>主行程</div>
+    <div><span class="dot" style="background:#9B59B6"></span>可有可無</div>
+    <div><span class="dot" style="background:#27AE60"></span>🚻 廁所</div>
+    <div class="muted" style="margin-top:6px">提示：點圖標看詳情，可直接開啟 Google 地圖導航。</div>`;
+  return div;
+};
+legend.addTo(map);
+</script>
 </body>
 </html>
