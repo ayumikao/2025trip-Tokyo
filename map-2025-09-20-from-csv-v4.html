@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>9/20 澀谷 → 鎌倉｜互動地圖（CSV 連結自動定位 v4）</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  html,body,#map{height:100%;margin:0}
+  .legend{background:#fff;padding:8px 10px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);font:12px/1.5 system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  .legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .card{font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;min-width:240px;max-width:320px}
+  .card h3{margin:0 0 6px;font-size:16px}
+  .meta{color:#667;font-size:12px;margin:4px 0 6px}
+  .tag{display:inline-block;border:1px solid #ccd;padding:2px 6px;border-radius:999px;font-size:12px;text-decoration:none;color:#223;margin-right:6px;margin-top:4px}
+  .muted{color:#789}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CSV_URL = "timeline-2025-09-20_v4.csv";
+
+function parseCSV(text){
+  const rows = []; let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], n = text[i+1];
+    if(c === '"'){
+      if(inQuotes && n === '"'){ field += '"'; i++; } else inQuotes = !inQuotes;
+    } else if(c === ',' && !inQuotes){
+      row.push(field); field='';
+    } else if((c === '\n' || c === '\r') && !inQuotes){
+      if(field !== '' || row.length){ row.push(field); rows.push(row); row=[]; field=''; }
+      if(c === '\r' && n === '\n'){ i++; }
+    } else {
+      field += c;
+    }
+  }
+  if(field !== '' || row.length){ row.push(field); rows.push(row); }
+  const header = rows.shift().map(h=>h.trim());
+  return rows.filter(r=>r.length && r.some(x=>x && x.trim()!=='')).map(cols => {
+    const obj = {}; header.forEach((h,i)=> obj[h] = (cols[i]||'').trim()); return obj;
+  });
+}
+
+function parseLatLngFromUrl(url){
+  if(!url) return null;
+  try{
+    const u = new URL(url);
+    const q = u.searchParams.get("query") || u.searchParams.get("q");
+    if(q){
+      const m = q.match(/(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)/);
+      if(m) return {lat: parseFloat(m[1]), lng: parseFloat(m[2]), precise:true};
+    }
+    const atIdx = u.pathname.indexOf("@");
+    if(atIdx>=0){
+      const sub = u.pathname.slice(atIdx+1);
+      const m = sub.match(/(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)/);
+      if(m) return {lat: parseFloat(m[1]), lng: parseFloat(m[2]), precise:true};
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+const APPROX_LOOKUP = {
+  "澀谷出發（包車）": [35.6580,139.7016],
+  "7-11 鎌倉七里ガ浜店": [35.3099,139.5277],
+  "七高正門前（私人拍照點）": [35.3114,139.5341],
+  "顯証寺（私人拍照點）": [35.3069,139.5259],
+  "湘南深澤站（倒掛鐵路）": [35.332861,139.518890],
+  "錢洗弁財天 宇賀福神社": [35.3249,139.5451],
+  "小町通商店街（600m）": [35.3213,139.5566],
+  "鶴岡八幡宮": [35.3269,139.5591],
+  "高德院（鎌倉大佛）": [35.3167,139.5352],
+  "YAMAKA 江之島店": [35.3088,139.4900],
+  "Rana 片瀬江ノ島": [35.3109,139.4857],
+  "江之島（看夕陽）": [35.2988,139.4806],
+  "日落": [35.2988,139.4806]
+};
+
+const map = L.map('map').setView([35.318,139.55], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'}).addTo(map);
+
+const Lmain = L.layerGroup().addTo(map);
+const Lopt = L.layerGroup().addTo(map);
+const Ltoilet = L.layerGroup().addTo(map);
+
+function icon(color){ return L.divIcon({
+  className:'', iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[0,-10],
+  html:`<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="14" cy="14" r="12" fill="white" stroke="${color}" stroke-width="2"/>
+    <circle cx="14" cy="14" r="6" fill="${color}"/>
+  </svg>`
+});}
+const icPrecise = icon('#2E86DE');
+const icApprox  = icon('#F39C12');
+const icToilet  = icon('#27AE60');
+
+function addMarker(layer, lat, lng, title, time, note, link, precise){
+  const m = L.marker([lat,lng], {icon: layer===Ltoilet?icToilet:(precise?icPrecise:icApprox)}).addTo(layer);
+  const linkHtml = link?`<a class="tag" target="_blank" href="${link}">📍 Google 地圖</a>`:'';
+  const precTag = `<span class="tag" style="border-color:${precise?'#2E86DE':'#F39C12'}33">${precise?'精準座標':'近似座標'}</span>`;
+  m.bindPopup(`<div class="card"><h3>${title}</h3>${time?`<div class="meta">${time}</div>`:''}${note?`<div class="muted">${note}</div>`:''}${linkHtml}${precTag}</div>`);
+  return m;
+}
+
+function normalizeTitle(t){ return (t||"").replace(/^[0-9①-⑳\\.\\s]+/g,'').trim(); }
+
+async function init(){
+  const res = await fetch(CSV_URL);
+  const text = await res.text();
+  const rows = parseCSV(text);
+  const seq = [];
+  for(const r of rows){
+    const title = normalizeTitle(r["地點 / 活動"]);
+    if(!title) continue;
+    const link = r["📍 景點連結"];
+    const time = (r["時間起"]||"") + (r["時間迄"]?`–${r["時間迄"]}`:"");
+    const note = r["備註"] || "";
+    const cate = (r["類別"]||"").trim();
+    const wc = (r["🚻 廁所"]||"").trim();
+
+    let latlng = parseLatLngFromUrl(link);
+    let precise = false;
+    if(latlng){ precise = true; }
+    else if(APPROX_LOOKUP[title]){
+      latlng = {lat: APPROX_LOOKUP[title][0], lng: APPROX_LOOKUP[title][1]};
+    }
+    if(!latlng) continue;
+
+    let layer = Lmain;
+    if(cate.includes("可有可無")) layer = Lopt;
+    if(wc && title.includes("7-11")) {
+      addMarker(Ltoilet, latlng.lat, latlng.lng, "🚻 "+title, "", wc, link, true);
+    }
+    const m = addMarker(layer, latlng.lat, latlng.lng, title, time, note, link, precise);
+    if(layer === Lmain) seq.push(m);
+  }
+
+  if(seq.length >= 2){
+    const latlngs = seq.map(m => m.getLatLng());
+    L.polyline(latlngs, {color:'#2E86DE', weight:4, opacity:.85}).addTo(Lmain);
+    map.fitBounds(L.latLngBounds(latlngs), {padding:[30,30]});
+  }
+
+  L.control.layers(null, {
+    "主行程/精準或近似": Lmain,
+    "可有可無": Lopt,
+    "🚻 廁所": Ltoilet
+  }, {collapsed:false, position:'topleft'}).addTo(map);
+
+  const legend = L.control({position:'bottomleft'});
+  legend.onAdd = function(){
+    const div = L.DomUtil.create('div','legend');
+    div.innerHTML = `
+      <div><span class="dot" style="background:#2E86DE"></span>精準座標（從連結解析）</div>
+      <div><span class="dot" style="background:#F39C12"></span>近似座標（暫用）</div>
+      <div><span class="dot" style="background:#27AE60"></span>🚻 廁所</div>
+      <div class="muted" style="margin-top:6px">提示：把 maps.app.goo.gl 改成含座標的 Google 長連結，就會顯示為藍色精準。</div>`;
+    return div;
+  };
+  legend.addTo(map);
+}
+
+init();
+</script>
+</body>
+</html>
