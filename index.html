@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日本行程｜互動地圖＋彩色時間軸（進階版）</title>
+
+  <!-- SEO / 分享 -->
+  <meta name="description" content="Ayumi 的 2025 日本行程：澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖。附互動式地圖與彩色時間軸。">
+  <meta property="og:title" content="日本行程｜互動地圖＋彩色時間軸（進階版）">
+  <meta property="og:description" content="澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖">
+  <meta property="og:type" content="website">
+
+  <!-- Leaflet 地圖（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    :root{
+      --primary:#6C63FF;
+      --accent:#00BFA6;
+      --bg:#0f172a;
+      --card:#111827;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --ring: rgba(108,99,255,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans TC", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 80% -10%, #1f2937 0%, #0b1022 50%, #010409 100%);
+    }
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(8px);
+      background: rgba(2,6,23,.6);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .wrap{max-width:1080px;margin:0 auto;padding:16px}
+    nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent)); box-shadow:0 0 12px var(--ring)}
+    .brand h1{font-size:18px;margin:0}
+    .navlinks a{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:10px}
+    .navlinks a:hover{color:white;background:rgba(255,255,255,.06)}
+
+    main .section{padding:28px 16px}
+    .hero{
+      text-align:center;
+      padding:56px 16px 12px;
+    }
+    .hero h2{margin:0 0 8px 0;font-size:clamp(24px,3.2vw,36px)}
+    .hero p{margin:0;color:var(--muted)}
+    .grid{display:grid;gap:16px}
+    @media(min-width:900px){ .grid{grid-template-columns: 1.2fr .8fr}}
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    #map{height:480px;border-radius:12px;overflow:hidden}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:14px;color:var(--muted)}
+    .pill{border:1px solid rgba(255,255,255,.12); padding:4px 10px;border-radius:999px}
+    .btn{
+      display:inline-block;margin-top:10px;padding:10px 14px;border-radius:12px;
+      text-decoration:none;color:white;background:linear-gradient(135deg,var(--primary),var(--accent));
+      box-shadow:0 10px 24px var(--ring);
+    }
+    /* 彩色時間軸 */
+    .timeline{position:relative;padding:8px 0 8px 18px}
+    .timeline::before{
+      content:""; position:absolute; left:6px; top:0; bottom:0; width:4px;
+      background: linear-gradient(var(--primary), var(--accent));
+      border-radius:4px;
+    }
+    .titem{
+      position:relative; margin:14px 0; padding:12px 12px 12px 16px;
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+    }
+    .titem::before{
+      content:""; position:absolute; left:-2px; top:18px; width:10px; height:10px; border-radius:50%;
+      background: white; box-shadow:0 0 0 6px var(--ring);
+    }
+    .day{font-weight:700; color:#c7d2fe}
+    time{color:#a5b4fc; font-weight:600}
+    .muted{color:var(--muted)}
+    footer{padding:32px 16px; text-align:center; color:var(--muted)}
+
+    /* 小工具 */
+    .hint{font-size:13px;color:var(--muted);margin-top:6px}
+    .badges{display:flex; gap:8px; flex-wrap:wrap}
+    .badge{font-size:12px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <nav>
+        <div class="brand">
+          <span class="dot"></span>
+          <h1>Ayumi Trip 2025</h1>
+        </div>
+        <div class="navlinks">
+          <a href="#mapsec">互動地圖</a>
+          <a href="#timeline">時間軸</a>
+          <a href="#about">關於</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖</h2>
+      <p>3 大 1 小（2歲10個月），部分路段包車｜可加上你的相片與更細緻的行程</p>
+      <div class="badges" style="justify-content:center;margin-top:10px">
+        <span class="badge">互動式地圖</span>
+        <span class="badge">彩色時間軸</span>
+        <span class="badge">GitHub Pages</span>
+        <span class="badge">行前分享</span>
+      </div>
+    </section>
+
+    <section id="mapsec" class="section">
+      <div class="wrap grid">
+        <div class="card">
+          <div id="map"></div>
+          <div class="legend">
+            <span class="pill">🔵 路線：依旅遊順序連線</span>
+            <span class="pill">📍 點選標記可看備註</span>
+            <span class="pill">🧭 雙指縮放或滑鼠滾輪</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">使用說明</h3>
+          <ol>
+            <li>上傳到 GitHub 倉庫根目錄（檔名 <b>index.html</b>）。</li>
+            <li>開啟 Pages：Settings → Pages → Branch: <b>main</b>／Folder: <b>/ (root)</b>。</li>
+            <li>等約 1 分鐘，開啟 <code>https://你的帳號.github.io/你的倉庫/</code>。</li>
+          </ol>
+          <p class="hint">※ 需要獨立相簿/更多分頁，可加檔 <code>photos.html</code>、<code>timeline.html</code> 並在導覽列連結。</p>
+          <a class="btn" href="#timeline">看時間軸</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="timeline" class="section">
+      <div class="wrap grid" style="grid-template-columns:1fr">
+        <div class="card">
+          <h3 style="margin-top:0">彩色時間軸</h3>
+          <div class="timeline">
+            <div class="titem">
+              <div class="day">9/20（六）澀谷 → 鎌倉</div>
+              <div><time>06:30</time> 出發（包車）｜<span class="muted">七里濱沿線、江之電、鎌倉高校前平交道</span></div>
+              <div><time>上午</time> 私房拍照點｜葛原岡神社、佐助稻荷</div>
+              <div><time>午後</time> 長谷寺／鎌倉大佛／鶴岡八幡宮</div>
+            </div>
+            <div class="titem">
+              <div class="day">9/21（日）箱根</div>
+              <div><time>早上</time> 桃源台停車 → 箱根空中纜車：<span class="muted">大涌谷一圈</span></div>
+              <div><time>中午</time> Naraya Cafe（足湯）</div>
+              <div><time>午後</time> 箱根神社／和平鳥居（湖畔）</div>
+            </div>
+            <div class="titem">
+              <div class="day">9/22（一）熱海 → 伊豆半島</div>
+              <div><time>早上</time> 海景溫泉住宿｜可考慮 BBQ</div>
+              <div><time>下午</time> 下田或河津濱線兜風</div>
+            </div>
+            <div class="titem">
+              <div class="day">9/23（二）河口湖</div>
+              <div><time>清晨</time> 湖畔拍富士山倒影｜<span class="muted">Mahoroba 週邊</span></div>
+              <div><time>上午</time> 新屋山神社／河口淺間神社 遥拝所</div>
+              <div><time>午後</time> 返程</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="wrap grid" style="grid-template-columns:1fr">
+        <div class="card">
+          <h3 style="margin-top:0">關於此頁</h3>
+          <p>這是進階單檔版（所有樣式與程式都在同一個 <code>index.html</code>），方便你直接丟到 GitHub Pages。若要做成多頁網站，可把時間軸獨立為 <code>timeline.html</code>，圖片放到 <code>assets/img/</code>。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">© 2025 Ayumi</div>
+  </footer>
+
+  <script>
+    // ---- 互動地圖初始化 ----
+    const map = L.map('map', { scrollWheelZoom: true });
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // 主要節點（座標為近似值，可再微調）
+    const points = [
+      { name: "澀谷站 (出發)", coords: [35.659, 139.700], note: "集合點。可改為飯店座標。" },
+      { name: "鎌倉（小町通/長谷寺周邊）", coords: [35.319, 139.550], note: "江之電、拍照點多。" },
+      { name: "桃源台站", coords: [35.2637, 139.0198], note: "停車 → 搭纜車玩大涌谷一圈。" },
+      { name: "Naraya Cafe（強羅）", coords: [35.2426, 139.0418], note: "足湯＋點心，親子友善。" },
+      { name: "和平鳥居（箱根神社 湖中鳥居）", coords: [35.2065, 139.0264], note: "熱門拍照點，早去排隊較短。" },
+      { name: "熱海", coords: [35.097, 139.077], note: "海景溫泉，可考慮 BBQ 的獨棟住宿。" },
+      { name: "伊豆半島（下田示意）", coords: [34.676, 138.944], note: "海線自駕景色佳，可依實際住宿調整。" },
+      { name: "河口湖（Mahoroba 近）", coords: [35.517, 138.765], note: "清晨可拍富士山倒影。" }
+    ];
+
+    const latlngs = [];
+    points.forEach(p => {
+      latlngs.push(p.coords);
+      L.marker(p.coords).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.note}`);
+    });
+
+    // 連線成路線
+    L.polyline(latlngs, { color: '#4f46e5', weight: 4, opacity: .9 }).addTo(map);
+
+    // 視野自動包含所有點
+    map.fitBounds(L.latLngBounds(latlngs).pad(0.2));
+  </script>
+</body>
+</html>
