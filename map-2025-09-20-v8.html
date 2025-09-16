@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>9/20 地圖（單頁）</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<div id="map" style="height:95vh"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function parseCSV(t){const r=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i],n=t[i+1];if(c=='"'){if(q&&n=='"'){f+='"';i++;}else q=!q;}else if(c==','&&!q){row.push(f);f='';}else if((c=='\n'||c=='\r')&&!q){if(f!==''||row.length){row.push(f);r.push(row);row=[];f='';}if(c=='\r'&&n=='\n')i++;}else f+=c;}if(f!==''||row.length){row.push(f);r.push(row);}const h=r.shift().map(x=>x.replace(/^\uFEFF/,'').trim());return r.map(cols=>{const o={};h.forEach((k,i)=>o[k]=cols[i]||'');return o;});}
+function normTitle(t){return (t||'').replace(/^[0-9①-⑳\.\s]+/,'').trim();}
+function coordFrom(url){try{const u=new URL(url);if(u.searchParams.get('query')){const [la,lo]=u.searchParams.get('query').split(',').map(Number);return [la,lo];}}catch(e){}return null;}
+async function geo(title){await new Promise(r=>setTimeout(r,800));const q=encodeURIComponent(title+' Kamakura Kanagawa Japan');const r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1');if(!r.ok) return null;const j=await r.json();if(j&&j[0])return[+j[0].lat,+j[0].lon];return null;}
+(async()=>{
+  const m=L.map('map').setView([35.31,139.53],11);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+  const t=await fetch('timeline-2025-09-20_v6.csv').then(r=>r.text());const rows=parseCSV(t);
+  const bounds=[];
+  for(const r of rows){const title=normTitle(r['地點 / 活動']);if(!title)continue;let xy=coordFrom(r['📍 景點連結']);if(!xy)xy=await geo(title);if(!xy)continue;const mk=L.marker(xy).addTo(m);bounds.push(xy);mk.bindPopup('<b>'+title+'</b>');}
+  if(bounds.length){m.fitBounds(bounds,{padding:[20,20]});}
+})();
+</script>
