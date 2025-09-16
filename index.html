@@ -1,106 +1,85 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>2025 東京近郊旅</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    body {
-      margin: 0;
-      background: #0b1526;
-      color: #fff;
-      font-family: "Noto Sans TC", sans-serif;
-    }
-    .header-sticky {
-      position: sticky;
-      top: 0;
-      background: #0b1526;
-      padding: 10px;
-      z-index: 5000;
-    }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      flex-wrap: nowrap;
-      gap: 12px;
-    }
-    .tab {
-      padding: 6px 14px;
-      border: 2px solid #2b3f66;
-      border-radius: 20px;
-      background: #0f1e35;
-      color: #fff;
-      font-size: 14px;
-      text-align: center;
-    }
-    .tab span {
-      display: block;
-      font-size: 11px;
-      opacity: 0.7;
-    }
-    #map {
-      height: 400px;
-      width: 100%;
-    }
-    .map-wrap,
-    .map-wrap .leaflet-container,
-    .map-wrap .leaflet-control,
-    .map-wrap .leaflet-popup {
-      z-index: 1;
-    }
-    .map-fab {
-      position: absolute;
-      right: 10px;
-      top: 120px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 100;
-    }
-    .map-fab button {
-      background: #0f1e35;
-      color: #fff;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 8px;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>2025 東京近郊旅 — 日期按鈕示範</title>
+<style>
+  :root{
+    --bg:#0f172a;          /* 背景 */
+    --card:#111827cc;      /* 卡片 */
+    --text:#e5e7eb;        /* 文字 */
+    --muted:#9ca3af;       /* 次要 */
+    --accent:#1d4ed8;      /* 膠囊外框 */
+    --accentFill:#0b3ea8;  /* 膠囊填色(選中) */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -200px,#1e293b 0%,#0b1220 40%,#0a0f1d 100%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  header{position:sticky;top:0;z-index:50;padding:10px 16px 8px;background:linear-gradient(180deg,rgba(10,15,29,.95),rgba(10,15,29,.75) 60%,rgba(10,15,29,0));backdrop-filter:blur(6px)}
+  h1{margin:6px 0 8px;font-size:26px;letter-spacing:.04em}
+  .route{color:var(--muted);font-size:14px;margin-bottom:10px}
+  .dates{display:flex;gap:12px;overflow-x:auto;padding:6px 2px}
+  .dates::-webkit-scrollbar{display:none}
+  .date-btn{
+    display:inline-flex;flex-direction:column;justify-content:center;align-items:center;
+    min-width:92px;height:54px;padding:4px 10px;border-radius:999px;
+    background:rgba(255,255,255,.02);border:2px solid #2a3550;color:var(--text);
+    cursor:pointer;user-select:none;transition:.18s transform,.18s background,.18s border-color;
+  }
+  .date-btn:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
+  .date-btn:hover{transform:translateY(-1px);border-color:#3b4a72}
+  .date-btn.active{background:linear-gradient(180deg,#0c1b3a,#08142b);border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18) inset}
+  .date-big{font-size:18px;font-weight:700;letter-spacing:.04em}
+  .date-small{font-size:12px;color:#b3c1dd;margin-top:3px}
+  main{padding:12px 16px 40px}
+  section{scroll-margin-top:92px;margin:24px auto;max-width:980px;background:rgba(255,255,255,.03);border:1px solid #20304d;border-radius:16px;padding:14px}
+  .fake{height:240px;border-radius:12px;background:#0f1a2e;border:1px dashed #334155;display:grid;place-items:center;color:#94a3b8}
+</style>
 </head>
 <body>
-  <div class="header-sticky">
-    <h2>2025 東京近郊旅</h2>
-    <p>澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</p>
-    <div class="tabs">
-      <div class="tab">09/20<span>鎌倉</span></div>
-      <div class="tab">09/21<span>箱根</span></div>
-      <div class="tab">09/22<span>熱海</span></div>
-      <div class="tab">09/23<span>河口湖</span></div>
-    </div>
-  </div>
+  <header>
+    <h1>2025 東京近郊旅</h1>
+    <div class="route">澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</div>
+    <nav class="dates" aria-label="日期切換">
+      <button class="date-btn active" id="btn-0920" aria-controls="d0920" aria-label="切換到 9 月 20 日 鎌倉" onclick="go('d0920', this)">
+        <span class="date-big">09/20</span><span class="date-small">鎌倉</span>
+      </button>
+      <button class="date-btn" id="btn-0921" aria-controls="d0921" aria-label="切換到 9 月 21 日 箱根" onclick="go('d0921', this)">
+        <span class="date-big">09/21</span><span class="date-small">箱根</span>
+      </button>
+      <button class="date-btn" id="btn-0922" aria-controls="d0922" aria-label="切換到 9 月 22 日 熱海" onclick="go('d0922', this)">
+        <span class="date-big">09/22</span><span class="date-small">熱海</span>
+      </button>
+      <button class="date-btn" id="btn-0923" aria-controls="d0923" aria-label="切換到 9 月 23 日 河口湖" onclick="go('d0923', this)">
+        <span class="date-big">09/23</span><span class="date-small">河口湖</span>
+      </button>
+    </nav>
+  </header>
+  <main>
+    <section id="d0920" aria-labelledby="btn-0920">
+      <div class="fake">這裡放 9/20 互動地圖 + 照片牆 + 時間軸</div>
+    </section>
+    <section id="d0921" aria-labelledby="btn-0921">
+      <div class="fake">這裡放 9/21 內容</div>
+    </section>
+    <section id="d0922" aria-labelledby="btn-0922">
+      <div class="fake">這裡放 9/22 內容</div>
+    </section>
+    <section id="d0923" aria-labelledby="btn-0923">
+      <div class="fake">這裡放 9/23 內容</div>
+    </section>
+  </main>
 
-  <div class="map-wrap">
-    <div id="map"></div>
-    <div class="map-fab">
-      <button>📍 我在這</button>
-      <button>📡 跟隨我</button>
-    </div>
-  </div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    var map = L.map('map').setView([35.3, 139.55], 10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 測試 marker
-    L.marker([35.3, 139.55]).addTo(map)
-      .bindPopup('鎌倉釜飯 kamakama ichibamaeten');
-
-    L.marker([35.35, 139.53]).addTo(map)
-      .bindPopup('雨備(西友大船店)');
-  </script>
+<script>
+  function go(id, el){
+    // active 樣式
+    document.querySelectorAll('.date-btn').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    // 滑到對應區塊
+    const sec = document.getElementById(id);
+    if(sec) sec.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+</script>
 </body>
 </html>
