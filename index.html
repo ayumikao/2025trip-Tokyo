@@ -1,88 +1,105 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2025 東京近郊旅遊</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body { background: #0d1117; color: #e6edf3; font-family: sans-serif; margin: 0; padding: 0;}
-    header { padding: 10px; text-align: center;}
-    h1 { margin: 5px 0; }
-    .date-buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
-    .date-buttons button { background: #161b22; border: 2px solid #30363d; border-radius: 12px; padding: 6px 10px; color: #e6edf3; font-size: 16px; min-width: 85px; cursor: pointer; }
-    .date-buttons button small { display: block; font-size: 12px; opacity: 0.8;}
-    .date-buttons button.active { border-color: #1f6feb; background: #1f6feb; }
-    #map { height: 350px; margin: 10px; border-radius: 8px; }
-    .map-controls { position: absolute; top: 80px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; }
-    .map-controls button { background: #161b22; border: 1px solid #30363d; color: #e6edf3; border-radius: 6px; padding: 6px; cursor: pointer; }
-    #fullscreen { position: absolute; top: 10px; right: 10px; z-index: 1000; background: #161b22; border: 1px solid #30363d; padding: 6px; border-radius: 6px; cursor: pointer;}
-    section { padding: 10px; }
-    .timeline { width: 100%; border-collapse: collapse; }
-    .timeline th, .timeline td { border: 1px solid #30363d; padding: 6px; font-size: 14px; }
-    .photo-wall { margin-top: 10px; border: 1px solid #30363d; padding: 8px; border-radius: 6px; min-height: 60px; }
+    body { background:#0d1117; color:#fff; font-family:sans-serif; margin:0; }
+    header { padding:10px; text-align:center; background:#0d1117; position:sticky; top:0; z-index:1000; }
+    h1 { font-size:20px; margin:5px 0; }
+    .sub { color:#aaa; font-size:14px; }
+    .day-buttons { display:flex; justify-content:center; gap:8px; flex-wrap:nowrap; overflow-x:auto; padding:10px; }
+    .day-buttons button {
+      background:#0d1117; border:2px solid #3b4cca; border-radius:12px; padding:6px 12px;
+      color:#fff; font-size:14px; flex-shrink:0; min-width:70px;
+    }
+    .day-buttons button.active { background:#3b4cca; }
+    #map { height:400px; margin:10px; border-radius:10px; }
+    .map-buttons {
+      position:absolute; right:10px; bottom:50px; display:flex; flex-direction:column; gap:8px; z-index:1001;
+    }
+    .map-buttons button {
+      writing-mode: vertical-rl; text-orientation: upright;
+      background:#1e293b; color:#fff; border:none; border-radius:6px; padding:4px 2px; font-size:12px;
+    }
+    #layerControl { position:absolute; top:10px; right:10px; z-index:1001; background:#1e293b; color:#fff; padding:6px; border-radius:6px; font-size:12px; }
+    #photos { margin:10px; padding:10px; background:#111827; border-radius:8px; }
+    #timeline { margin:10px; padding:10px; background:#111827; border-radius:8px; }
+    table { width:100%; border-collapse:collapse; color:#fff; font-size:14px; }
+    th, td { padding:6px; border-bottom:1px solid #333; vertical-align:top; }
+    th { background:#1f2937; position:sticky; top:0; }
+    .mapcode { background:#fca311; color:#000; padding:2px 6px; border-radius:12px; display:inline-block; font-size:13px; }
+    .remark { color:#ccc; font-size:13px; margin-left:2em; }
   </style>
 </head>
 <body>
   <header>
     <h1>2025 東京近郊旅遊</h1>
-    <div>澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖</div>
-    <div class="date-buttons">
-      <button class="active">09/20<small>鎌倉</small></button>
-      <button>09/21<small>箱根</small></button>
-      <button>09/22<small>熱海</small></button>
-      <button>09/23<small>河口湖</small></button>
+    <div class="sub">澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖</div>
+    <div class="day-buttons">
+      <button class="active">09/20<br><small>鎌倉</small></button>
+      <button>09/21<br><small>箱根</small></button>
+      <button>09/22<br><small>熱海</small></button>
+      <button>09/23<br><small>河口湖</small></button>
     </div>
   </header>
 
-  <div id="fullscreen">全螢幕</div>
-  <div id="map"></div>
-  <div class="map-controls">
-    <button id="locate">我<br>在<br>這</button>
-    <button id="follow">跟<br>隨<br>我</button>
+  <div style="position:relative;">
+    <div id="map"></div>
+    <div id="layerControl">
+      <label><input type="checkbox" checked> 主行程</label><br>
+      <label><input type="checkbox" checked> 可有可無</label><br>
+      <label><input type="checkbox" checked> 廁所</label>
+    </div>
+    <div class="map-buttons">
+      <button id="locateBtn">我在這</button>
+      <button id="followBtn">跟隨我</button>
+    </div>
   </div>
 
-  <section>
+  <div id="photos">
     <h3>照片牆（點任一標記顯示相簿）</h3>
-    <div class="photo-wall" id="photo-wall">暫無照片</div>
-  </section>
+    <div id="photoWall">暫無照片</div>
+  </div>
 
-  <section>
+  <div id="timeline">
     <h3>時間軸（9/20 +15 分鐘緩衝版）</h3>
-    <table class="timeline">
+    <table id="timelineTable">
       <thead>
-        <tr><th>時間</th><th>地點 / 活動</th><th>類別</th><th>車 Map Code</th></tr>
+        <tr><th>時間</th><th>地點 / 活動</th><th>類別</th><th>車Map Code</th></tr>
       </thead>
-      <tbody id="timeline-body">
-        <tr><td>6:30-8:00</td><td>澀谷出發<br><a href="#">Google 地圖</a><br>備註：預留 1.5 小時車程（含早高峰小堵車）</td><td>包車</td><td>🚗 579 223*51</td></tr>
-        <tr><td>8:00-8:10</td><td>7-11 鎌倉七里ガ浜店<br><a href="#">Google 地圖</a><br>備註：上廁所</td><td>休息</td><td>🚗 8 181 231*33</td></tr>
+      <tbody>
+        <tr><td>6:30–8:00</td><td>澀谷出發<br><a href="#">📍 Google 地圖</a><div class="remark">備註：預留1.5小時車程（含早高峰小堵車）</div></td><td>包車</td><td><span class="mapcode">🚗 579 223*51</span></td></tr>
+        <tr><td>8:00–8:10</td><td>7-11 鎌倉七里ガ浜店<br><a href="#">📍 Google 地圖</a><div class="remark">備註：上廁所</div></td><td>休息</td><td><span class="mapcode">🚗 8 181 231*33</span></td></tr>
       </tbody>
     </table>
-  </section>
+  </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([35.33, 139.55], 10);
+    var map = L.map('map').setView([35.35, 139.55], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const marker = L.marker([35.33, 139.55]).addTo(map).bindPopup("鎌倉地點示例");
+    var marker1 = L.marker([35.658, 139.701]).addTo(map).bindPopup("澀谷出發");
+    var marker2 = L.marker([35.308, 139.535]).addTo(map).bindPopup("7-11 鎌倉七里ガ浜店");
 
-    document.getElementById('locate').addEventListener('click', () => {
-      map.setView([35.66, 139.7], 12);
-    });
-    document.getElementById('follow').addEventListener('click', () => {
-      alert("跟隨模式尚未實作");
-    });
-
-    document.getElementById('fullscreen').addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    });
+    document.getElementById("locateBtn").onclick = function() {
+      map.locate({setView:true, maxZoom:16});
+    };
+    var follow = false;
+    document.getElementById("followBtn").onclick = function() {
+      follow = !follow;
+      if(follow) map.on('locationfound', onLocationFound);
+      else map.off('locationfound', onLocationFound);
+    };
+    function onLocationFound(e) {
+      L.marker(e.latlng).addTo(map).bindPopup("📍 我在這").openPopup();
+      if(follow) map.setView(e.latlng, 16);
+    }
   </script>
 </body>
 </html>
