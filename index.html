@@ -1,100 +1,67 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>2025 東京近郊旅 | 澀谷→鎌倉→箱根→熱海→伊豆半島</title>
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- PapaParse (讀 CSV) -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
-<!-- dayjs 只為了時間顯示用 -->
-<script src="https://unpkg.com/dayjs@1/dayjs.min.js"></script>
-
 <style>
-  :root{
-    --bg:#0f172a;           /* 深藍底 */
-    --panel:#111827;        /* 面板 */
-    --text:#e5e7eb;         /* 文字 */
-    --muted:#a1a1aa;        /* 次要字 */
-    --accent:#60a5fa;       /* 重點色 */
-    --green:#34d399;        /* 勾選色 */
-    --chip:#111827;
-    --chip-border:#374151;
-  }
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family: ui-sans-serif,system-ui,"Noto Sans TC","PingFang TC",Arial;}
-  a{color:#93c5fd;text-decoration:none;}
-  a:hover{text-decoration:underline;}
+:root{
+  --bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#a1a1aa;--chip:#0b1220;--chip-b:#334155;
+  --stickTop: 96px; /* 會在載入時計算覆寫，讓表頭停在日期按鈕下 */
+}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,"Noto Sans TC","PingFang TC",Arial}
+a{color:#93c5fd;text-decoration:none}a:hover{text-decoration:underline}
+.topbar{position:sticky;top:0;z-index:900;background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(15,23,42,.7) 70%,transparent);backdrop-filter:blur(6px)}
+.wrap{max-width:1100px;margin:auto;padding:14px 14px 0}
+.title{font-weight:700;font-size:18px;white-space:nowrap;overflow:auto;scrollbar-width:none}
+.tabs{display:flex;gap:10px;margin:10px 0 8px;overflow:auto;scrollbar-width:none}
+.tab{padding:8px 14px;border-radius:999px;background:#0b1220;border:1px solid #1f2937;color:#cbd5e1;cursor:pointer;white-space:nowrap}
+.tab.active{background:#1f2937;color:#fff;border-color:#3b82f6}
 
-  /* 頂部導覽 */
-  .topbar{position:sticky;top:0;z-index:900; background:linear-gradient(180deg, rgba(15,23,42,.92), rgba(15,23,42,.75) 70%, transparent); backdrop-filter: blur(6px);}
-  .wrap{max-width:1100px;margin:auto;padding:14px 14px 0;}
+.section{max-width:1100px;margin:10px auto;padding:12px;border-radius:14px;background:var(--panel);box-shadow:0 0 0 1px #0b1220}
+#map{height:60vh;border-radius:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.btn{border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn:hover{border-color:#475569}
 
-  .title{font-weight:700;font-size:18px;white-space:nowrap;overflow:auto;scrollbar-width:none;}
-  .tabs{display:flex;gap:10px;margin:10px 0 8px;overflow:auto;scrollbar-width:none;}
-  .tab{padding:8px 14px;border-radius:999px;background:#0b1220;border:1px solid #1f2937;color:#cbd5e1;cursor:pointer;white-space:nowrap;}
-  .tab.active{background:#1f2937;color:#fff;border-color:#3b82f6}
+.float-panel{position:absolute;right:14px;top:14px;z-index:600;background:#0b1220cc;border:1px solid #334155;border-radius:12px;padding:10px 12px}
+.float-panel label{display:flex;align-items:center;gap:8px;margin:6px 0}
+.locate-box{position:absolute;right:14px;top:144px;z-index:600;display:flex;flex-direction:column;gap:8px}
+.leaflet-control-container .leaflet-top.leaflet-right{margin-top:60px}
 
-  /* 主體 */
-  .section{max-width:1100px;margin:10px auto;padding:12px;border-radius:14px;background:var(--panel);box-shadow: 0 0 0 1px #0b1220;}
-  .flex{display:grid;grid-template-columns:1fr;gap:14px;}
-  @media (min-width: 820px){ .flex{grid-template-columns: minmax(0,1fr) 360px;} }
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--chip-b);background:var(--chip);padding:4px 10px;border-radius:999px;font-weight:600}
+.copy{cursor:pointer;opacity:.85}.copy:hover{opacity:1}
 
-  /* 地圖區 */
-  #map{height:60vh;border-radius:12px;}
-  .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;}
-  .btn{border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
-  .btn:hover{border-color:#475569}
-  .float-panel{position:absolute;right:14px;top:14px;z-index:600;background:#0b1220cc;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#e5e7eb}
-  .float-panel label{display:flex;align-items:center;gap:8px;margin:6px 0}
-  .float-panel input{accent-color:#3b82f6}
-  .locate-btn{position:absolute;right:14px;top:140px;z-index:600}
-  .leaflet-control-container .leaflet-top.leaflet-right{margin-top:60px;} /* 讓預設控制不蓋住 */
+.photos h3{margin:4px 0 10px;font-size:16px;color:#cbd5e1}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:820px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ph{position:relative;background:#0b1220;border:1px solid #1f2937;border-radius:10px;overflow:hidden;min-height:120px;display:flex;align-items:center;justify-content:center}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph .cap{position:absolute;left:8px;bottom:6px;background:#0008;padding:2px 6px;border-radius:6px;font-size:12px}
+.empty{padding:18px;border:1px dashed #334155;border-radius:10px;color:#a1a1aa;background:#0b1220}
 
-  /* marker popup 內的 chip */
-  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--chip-border);background:var(--chip);padding:4px 10px;border-radius:999px;font-weight:600}
-  .chip .copy{cursor:pointer;opacity:.8}
-  .chip .copy:hover{opacity:1}
-
-  /* 照片牆 */
-  .photos h3{margin:4px 0 10px;font-size:16px;color:#cbd5e1}
-  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  @media (min-width: 820px){ .grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
-  .ph{position:relative;background:#0b1220;border:1px solid #1f2937;border-radius:10px;overflow:hidden;min-height:120px;display:flex;align-items:center;justify-content:center}
-  .ph img{width:100%;height:100%;object-fit:cover}
-  .ph .cap{position:absolute;left:8px;bottom:6px;background:#0008;padding:2px 6px;border-radius:6px;font-size:12px}
-  .empty{padding:18px;border:1px dashed #334155;border-radius:10px;color:#a1a1aa;background:#0b1220}
-
-  /* Lightbox */
-  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000}
-  .lightbox.on{display:flex}
-  .lightbox img{max-width:92vw;max-height:92vh;border-radius:8px}
-
-  /* 時間軸 */
-  .tl-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px}
-  .table{width:100%;border-collapse:separate;border-spacing:0 10px;}
-  .table th,.table td{padding:10px 12px;vertical-align:top}
-  .table th{position:sticky;top:0;background:#0b1220;border-bottom:1px solid #1f2937;z-index:5}
-  .row{background:#0b1220;border:1px solid #1f2937;border-radius:12px}
-  .time{white-space:nowrap}              /* 時間維持一行 */
-  .note{white-space:normal;line-height:1.4}  /* 備註橫向顯示，不再換每個字 */
-  .type{white-space:nowrap}
-  .mapcode{white-space:nowrap}
-  .badge{display:inline-block;border:1px solid #334155;background:#0b1220;border-radius:999px;padding:6px 10px}
-  .copybtn{cursor:pointer;margin-left:8px;opacity:.8}
-  .copybtn:hover{opacity:1}
+.table{width:100%;border-collapse:separate;border-spacing:0 10px}
+.table th,.table td{padding:10px 12px;vertical-align:top}
+.table thead th{position:sticky;top:var(--stickTop);background:#0b1220;border-bottom:1px solid #1f2937;z-index:5}
+.row{background:#0b1220;border:1px solid #1f2937;border-radius:12px}
+.time{white-space:nowrap}
+.note{white-space:normal;line-height:1.45}
+.type,.mapcode{white-space:nowrap}
+.badge{display:inline-block;border:1px solid #334155;background:#0b1220;border-radius:999px;padding:6px 10px}
+.copybtn{cursor:pointer;margin-left:8px;opacity:.85}.copybtn:hover{opacity:1}
 </style>
 </head>
 <body>
 
-<div class="topbar">
+<div class="topbar" id="topbar">
   <div class="wrap">
     <div class="title">2025 東京近郊旅 ｜ 澀谷→鎌倉→箱根→熱海→伊豆半島</div>
-    <div class="tabs">
+    <div class="tabs" id="tabs">
       <button class="tab active">9/20 鎌倉</button>
       <button class="tab">9/21</button>
       <button class="tab">9/22</button>
@@ -104,21 +71,17 @@
 </div>
 
 <div class="section wrap">
-  <div class="btn-row">
-    <button id="btnFull" class="btn">全螢幕地圖</button>
-  </div>
-
+  <div class="btn-row"><button id="btnFull" class="btn">全螢幕地圖</button></div>
   <div style="position:relative">
     <div id="map"></div>
 
-    <!-- 圖層開關（避免被地圖蓋住） -->
     <div class="float-panel" id="layerBox">
       <label><input type="checkbox" id="chkMain" checked> 主行程/精華或近似</label>
-      <label><input type="checkbox" id="chkOpt"  checked> 可有可無</label>
+      <label><input type="checkbox" id="chkOpt" checked> 可有可無</label>
       <label><input type="checkbox" id="chkToil" checked> 廁所</label>
     </div>
 
-    <div class="locate-btn">
+    <div class="locate-box">
       <button class="btn" id="btnLocate">📍 我在這</button>
       <button class="btn" id="btnFollow">🛰️ 跟隨我</button>
     </div>
@@ -132,7 +95,7 @@
 </div>
 
 <div class="section wrap">
-  <div class="tl-head">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 8px">
     <div>時間軸（9/20 +15 分鐘緩衝版）</div>
     <button class="btn" id="btnToggleTL">展開 / 收合</button>
   </div>
@@ -141,180 +104,133 @@
   </div>
 </div>
 
-<!-- Lightbox -->
-<div id="lb" class="lightbox" tabindex="-1">
-  <img id="lbImg" alt="">
+<div id="lb" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000">
+  <img id="lbImg" alt="" style="max-width:92vw;max-height:92vh;border-radius:8px"/>
 </div>
 
 <script>
-/* ------------------ 基本設定 ------------------ */
-const CSV_TIMELINE = 'timeline-2025-09-20_v6.csv';
-const CSV_PHOTOS   = 'photos-2025-09-20-mapped.csv';
-const JSON_COORDS  = 'coords-override-2025-09-20.json';  // 使用你提供的「最終版」座標
+const CSV_TIMELINE='timeline-2025-09-20_v6.csv';
+const CSV_PHOTOS='photos-2025-09-20-mapped.csv';
+const JSON_COORDS='coords-override-2025-09-20.json';
 
-// 地圖
-const map = L.map('map', { zoomControl:true }).setView([35.32,139.53], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom: 19, attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+const map=L.map('map',{zoomControl:true}).setView([35.32,139.53],11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
 
-// 三個圖層群組 + 主線 polyline
-const layerMain = L.layerGroup().addTo(map);     // 主行程/精華
-const layerOpt  = L.layerGroup().addTo(map);     // 可有可無
-const layerTol  = L.layerGroup().addTo(map);     // 廁所
-let routeLine = null;                             // 主行程路線（僅主行程串點）
+const layerMain=L.layerGroup().addTo(map);
+const layerOpt =L.layerGroup().addTo(map);
+const layerTol =L.layerGroup().addTo(map);
+let routeLine=null;
+let COORDS={}, PHOTO_MAP={};
 
-// 座標覆蓋 (由 JSON 讀)
-let COORDS = {};   // { 地點名: [lat, lng] }
+function calcStickTop(){
+  const tb=document.getElementById('topbar');
+  const rect=tb.getBoundingClientRect();
+  // 元素的實際高度（含 padding），再加一點緩衝
+  const h=tb.offsetHeight;
+  document.documentElement.style.setProperty('--stickTop', (h+6)+'px');
+}
+calcStickTop();
+window.addEventListener('resize',calcStickTop);
 
-// 照片池：{ 地點名: [ {src, cap}, ... ] }
-let PHOTO_MAP = {};
+const btnFull=document.getElementById('btnFull');
+let isFull=false;
+btnFull.onclick=()=>{const m=document.getElementById('map');isFull=!isFull;m.style.height=isFull?'86vh':'60vh';map.invalidateSize({animate:true});};
 
-/* ------------------ UI 控制 ------------------ */
-// 全螢幕地圖
-const btnFull = document.getElementById('btnFull');
-let isFull = false;
-btnFull.onclick = () => {
-  const m = document.getElementById('map');
-  isFull = !isFull;
-  m.style.height = isFull? '86vh' : '60vh';
-  map.invalidateSize({animate:true});
-};
-
-// 圖層顯示
 function refreshLayerVisibility(){
-  document.getElementById('chkMain').checked ? map.addLayer(layerMain) : map.removeLayer(layerMain);
-  document.getElementById('chkOpt').checked  ? map.addLayer(layerOpt)  : map.removeLayer(layerOpt);
-  document.getElementById('chkToil').checked ? map.addLayer(layerTol)  : map.removeLayer(layerTol);
-
-  if (routeLine){
-    if (document.getElementById('chkMain').checked){
-      map.addLayer(routeLine);
-    }else{
-      map.removeLayer(routeLine);
-    }
+  document.getElementById('chkMain').checked?map.addLayer(layerMain):map.removeLayer(layerMain);
+  document.getElementById('chkOpt').checked ?map.addLayer(layerOpt ):map.removeLayer(layerOpt );
+  document.getElementById('chkToil').checked?map.addLayer(layerTol ):map.removeLayer(layerTol );
+  if(routeLine){
+    document.getElementById('chkMain').checked?map.addLayer(routeLine):map.removeLayer(routeLine);
   }
 }
-['chkMain','chkOpt','chkToil'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', refreshLayerVisibility);
-});
+['chkMain','chkOpt','chkToil'].forEach(id=>document.getElementById(id).addEventListener('change',refreshLayerVisibility));
 
-// 時間軸展收
-const tlBox = document.getElementById('tlBox');
-document.getElementById('btnToggleTL').onclick = ()=>{
-  tlBox.style.display = (tlBox.style.display==='none' ? '' : 'none');
-};
-
-/* ------------------ 定位功能 ------------------ */
-let myMarker = null, myCircle = null, watchId = null;
+let myMarker=null, myCircle=null, watchId=null;
 function locateOnce(){
   if(!navigator.geolocation) return alert('此瀏覽器不支援定位');
   navigator.geolocation.getCurrentPosition((pos)=>{
-    const {latitude, longitude, accuracy} = pos.coords;
-    const latlng = [latitude, longitude];
-    if(!myMarker){ myMarker = L.marker(latlng).addTo(map).bindTooltip('你在這'); }
-    else{ myMarker.setLatLng(latlng); }
-    if(!myCircle){ myCircle = L.circle(latlng,{radius:accuracy,opacity:.6,fillOpacity:.08}).addTo(map); }
-    else{ myCircle.setLatLng(latlng).setRadius(accuracy); }
-    map.flyTo(latlng, 16, {duration:1.2});
-  },(err)=>alert('定位失敗：'+err.message),{enableHighAccuracy:true,timeout:10000,maximumAge:10000});
+    const {latitude,longitude,accuracy}=pos.coords, latlng=[latitude,longitude];
+    myMarker?myMarker.setLatLng(latlng): myMarker=L.marker(latlng).addTo(map).bindTooltip('你在這');
+    myCircle?myCircle.setLatLng(latlng).setRadius(accuracy): myCircle=L.circle(latlng,{radius:accuracy,opacity:.6,fillOpacity:.08}).addTo(map);
+    map.flyTo(latlng,16,{duration:1.2});
+  },(e)=>alert('定位失敗：'+e.message),{enableHighAccuracy:true,timeout:10000,maximumAge:10000});
 }
 function toggleFollow(){
   if(!navigator.geolocation) return alert('此瀏覽器不支援定位');
-  if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; return; }
-  watchId = navigator.geolocation.watchPosition((pos)=>{
-    const {latitude, longitude, accuracy} = pos.coords;
-    const latlng = [latitude, longitude];
-    if(!myMarker){ myMarker = L.marker(latlng).addTo(map).bindTooltip('你在這'); }
-    else{ myMarker.setLatLng(latlng); }
-    if(!myCircle){ myCircle = L.circle(latlng,{radius:accuracy,opacity:.6,fillOpacity:.08}).addTo(map); }
-    else{ myCircle.setLatLng(latlng).setRadius(accuracy); }
+  if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;return;}
+  watchId=navigator.geolocation.watchPosition((pos)=>{
+    const {latitude,longitude,accuracy}=pos.coords, latlng=[latitude,longitude];
+    myMarker?myMarker.setLatLng(latlng): myMarker=L.marker(latlng).addTo(map).bindTooltip('你在這');
+    myCircle?myCircle.setLatLng(latlng).setRadius(accuracy): myCircle=L.circle(latlng,{radius:accuracy,opacity:.06,fillOpacity:.06}).addTo(map);
     map.panTo(latlng,{animate:true});
-  },(err)=>{ alert('定位失敗：'+err.message); if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;} },{
-    enableHighAccuracy:true,timeout:15000,maximumAge:0
-  });
+  },(e)=>{alert('定位失敗：'+e.message); if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
-document.getElementById('btnLocate').addEventListener('click', locateOnce);
-document.getElementById('btnFollow').addEventListener('click', toggleFollow);
+document.getElementById('btnLocate').addEventListener('click',locateOnce);
+document.getElementById('btnFollow').addEventListener('click',toggleFollow);
 
-/* ------------------ 工具 ------------------ */
-// 產 Marker Popup 內容（包含 MapCode chip、備註、Google 地圖）
+function normalizeSrc(s){
+  if(!s) return '';
+  if(/^https?:\/\//i.test(s)) return s;
+  if(s.includes('/')) return s;            // 已帶路徑
+  return 'assets/img/'+s;                   // 只給檔名 -> 補 assets/img/
+}
 function popupHTML(rec){
-  const mapCode = (rec['🚙車Map Code']||'').trim();
-  const note = (rec['備註']||'').trim();
-  const url  = (rec['📍 景點連結']||'').trim();
-
+  const code=(rec['🚙車Map Code']||'').trim();
+  const note=(rec['備註']||'').trim();
+  const url =(rec['📍 景點連結']||'').trim();
   return `
     <div style="min-width:240px">
       <div style="font-weight:800;font-size:18px;margin-bottom:6px">${rec['地點 / 活動']}</div>
-      ${mapCode?`<div class="chip">🚗 ${mapCode}<span class="copy" title="複製" onclick="navigator.clipboard.writeText('${mapCode}')">📋</span></div>`:''}
+      ${code?`<div class="chip">🚗 ${code}<span class="copy" title="複製" onclick="navigator.clipboard.writeText('${code}')">📋</span></div>`:''}
       ${note?`<div style="margin:8px 0 6px;color:#cbd5e1">${note}</div>`:''}
       ${url?`<div>📍 <a href="${url}" target="_blank">Google 地圖</a></div>`:''}
-    </div>
-  `;
+    </div>`;
 }
-// 在照片牆顯示某地點的相片
 function showPhotosFor(place){
-  const box = document.getElementById('photos');
-  const emp = document.getElementById('photosEmpty');
-  box.innerHTML = '';
-  const arr = PHOTO_MAP[place] || [];
-  if(!arr.length){ emp.style.display='block'; return; }
+  const box=document.getElementById('photos'), emp=document.getElementById('photosEmpty');
+  box.innerHTML='';
+  const arr=PHOTO_MAP[place]||[];
+  if(!arr.length){emp.style.display='block';return;}
   emp.style.display='none';
-  for(const p of arr){
-    const el = document.createElement('div'); el.className='ph';
-    const img = document.createElement('img'); img.loading='lazy'; img.src = p.src; img.alt = p.cap||place;
-    img.onclick = ()=>openLB(p.src);
-    const cap = document.createElement('div'); cap.className='cap'; cap.textContent = p.cap||'';
-    el.appendChild(img); el.appendChild(cap); box.appendChild(el);
-  }
+  arr.forEach(p=>{
+    const el=document.createElement('div');el.className='ph';
+    const img=document.createElement('img');img.loading='lazy';img.src=normalizeSrc(p.src);img.alt=p.cap||place;
+    img.onclick=()=>{document.getElementById('lbImg').src=normalizeSrc(p.src);document.getElementById('lb').style.display='flex';};
+    const cap=document.createElement('div');cap.className='cap';cap.textContent=p.cap||'';
+    el.appendChild(img);el.appendChild(cap);box.appendChild(el);
+  });
 }
+document.getElementById('lb').addEventListener('click',()=>document.getElementById('lb').style.display='none');
+window.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('lb').style.display='none';});
 
-// lightbox
-const lb = document.getElementById('lb'), lbImg = document.getElementById('lbImg');
-function openLB(src){ lbImg.src=src; lb.classList.add('on'); }
-lb.addEventListener('click', ()=>lb.classList.remove('on'));
-window.addEventListener('keydown',e=>{ if(e.key==='Escape') lb.classList.remove('on'); });
-
-/* ------------------ 載入資料：JSON / CSV ------------------ */
 async function loadAll(){
-  // 1) 座標覆蓋
-  COORDS = await fetch(JSON_COORDS).then(r=>r.json());
+  COORDS=await fetch(JSON_COORDS).then(r=>r.json());
 
-  // 2) 照片 CSV：欄位建議：place,img,caption
   await new Promise(res=>{
-    Papa.parse(CSV_PHOTOS, {
-      download:true, header:true, skipEmptyLines:true,
-      complete: (r)=>{
-        r.data.forEach(row=>{
-          const place = (row.place||row['place']||row['地點']||'').trim();
-          const src   = (row.img||row['img']||row['檔名']||'').trim();
-          if(!place || !src) return;
-          if(!PHOTO_MAP[place]) PHOTO_MAP[place]=[];
-          PHOTO_MAP[place].push({src, cap: row.caption||row['caption']||row['說明']||''});
-        });
-        res();
-      }
-    });
+    Papa.parse(CSV_PHOTOS,{download:true,header:true,skipEmptyLines:true,complete:(r)=>{
+      r.data.forEach(row=>{
+        const place=(row.place||row['place']||row['地點']||row['地點 / 活動']||'').trim();
+        const src  =(row.img||row['img']||row['src']||row['檔名']||'').trim();
+        const cap  =(row.caption||row['caption']||row['說明']||row['備註']||'').trim();
+        if(!place||!src) return;
+        (PHOTO_MAP[place]||(PHOTO_MAP[place]=[])).push({src,cap});
+      }); res();
+    }});
   });
 
-  // 3) 時間軸 + 地圖點
   await new Promise(res=>{
-    Papa.parse(CSV_TIMELINE, {
-      download:true, header:true, skipEmptyLines:true,
-      complete: (r)=>{
-        buildMapAndTimeline(r.data);
-        res();
-      }
-    });
+    Papa.parse(CSV_TIMELINE,{download:true,header:true,skipEmptyLines:true,complete:(r)=>{build(r.data);res();}});
   });
 }
-
-/* ------------------ 建立地圖與時間軸 ------------------ */
-function buildMapAndTimeline(rows){
-  const ptsMain = [];     // 用來串主線
-  const tl = document.getElementById('tl');
-  tl.innerHTML = `
+function twoLineTime(s,e){
+  const a=(s||'').trim(), b=(e||'').trim();
+  if(a&&b) return `<div>${a}–</div><div>${b}</div>`;
+  return a||b||'';
+}
+function build(rows){
+  const tl=document.getElementById('tl');
+  tl.innerHTML=`
     <thead>
       <tr>
         <th style="width:90px">時間</th>
@@ -324,71 +240,56 @@ function buildMapAndTimeline(rows){
         <th style="width:160px">車Map Code</th>
       </tr>
     </thead>
-    <tbody id="tb"></tbody>
-  `;
-  const tb = document.getElementById('tb');
-
+    <tbody id="tb"></tbody>`;
+  const tb=document.getElementById('tb');
+  const ptsMain=[];
   rows.forEach(rec=>{
-    const start = (rec['時間起']||'').trim();
-    const end   = (rec['時間迄']||'').trim();
-    const name  = (rec['地點 / 活動']||'').trim();
-    if(!name) return;
+    const name=(rec['地點 / 活動']||'').trim(); if(!name) return;
+    const type=(rec['類別']||'').trim();
+    const note=(rec['備註']||'').trim();
+    const url =(rec['📍 景點連結']||'').trim();
+    const code=(rec['🚙車Map Code']||'').trim();
+    const toilet=(rec['🚻 廁所']||'').trim();
 
-    const type  = (rec['類別']||'').trim();      // "可有可無" => 放 opt
-    const note  = (rec['備註']||'').trim();
-    const url   = (rec['📍 景點連結']||'').trim();
-    const toilet= (rec['🚻 廁所']||'').trim();
-    const code  = (rec['🚙車Map Code']||'').trim();
-
-    // 位置
-    const coord = COORDS[name];
+    const coord=COORDS[name];
     if(coord){
-      const latlng = [coord[0], coord[1]];
-      const mk = L.marker(latlng, {title:name})
-          .bindPopup(popupHTML(rec))
-          .on('click', ()=>showPhotosFor(name));
+      const latlng=[coord[0],coord[1]];
+      const mk=L.marker(latlng,{title:name}).bindPopup(popupHTML(rec)).on('click',()=>showPhotosFor(name));
       if(type==='可有可無'){ mk.addTo(layerOpt); }
-      else if(toilet){ mk.addTo(layerTol); }     // 有寫廁所的也放到廁所層（你的 CSV 已標註）
+      else if(toilet){ mk.addTo(layerTol); }
       else { mk.addTo(layerMain); ptsMain.push(latlng); }
     }
 
-    // 時間軸（備註橫式顯示）
-    const tr = document.createElement('tr'); tr.className='row';
-    tr.innerHTML = `
-      <td class="time">${start}${end?('–'+end):''}</td>
+    const tr=document.createElement('tr');tr.className='row';
+    tr.innerHTML=`
+      <td class="time">${twoLineTime(rec['時間起'],rec['時間迄'])}</td>
       <td>
         <div style="font-weight:700">${name}</div>
         ${url?`<div>📍 <a href="${url}" target="_blank">Google 地圖</a></div>`:''}
       </td>
       <td class="note">${note||''}</td>
       <td class="type">${type||''}</td>
-      <td class="mapcode">
-        ${code?`<span class="badge">🚗 ${code}<span class="copybtn" title="複製" onclick="navigator.clipboard.writeText('${code}')">📋</span></span>`:''}
-      </td>
-    `;
+      <td class="mapcode">${code?`<span class="badge">🚗 ${code}<span class="copybtn" title="複製" onclick="navigator.clipboard.writeText('${code}')">📋</span></span>`:''}</td>`;
     tb.appendChild(tr);
   });
 
-  // 主行程 polyline（只有主行程連線）
-  if(routeLine){ map.removeLayer(routeLine); }
+  if(routeLine) map.removeLayer(routeLine);
   if(ptsMain.length>=2){
-    routeLine = L.polyline(ptsMain, {color:'#60a5fa',weight:5,opacity:.85}).addTo(map);
-    map.fitBounds(routeLine.getBounds(), {padding:[20,20]});
+    routeLine=L.polyline(ptsMain,{color:'#60a5fa',weight:5,opacity:.85}).addTo(map);
+    map.fitBounds(routeLine.getBounds(),{padding:[20,20]});
   }else{
-    // 沒有主線就對所有 marker 取 bounds
-    const all = L.featureGroup([layerMain,layerOpt,layerTol]);
+    const all=L.featureGroup([layerMain,layerOpt,layerTol]);
     try{ map.fitBounds(all.getBounds(),{padding:[20,20]}); }catch(e){}
   }
-
   refreshLayerVisibility();
-  // 初始照片牆顯示第一個主行程點的照片
-  if(rows.length){
-    const firstWithPhoto = rows.find(r=>PHOTO_MAP[(r['地點 / 活動']||'').trim()]);
-    if(firstWithPhoto) showPhotosFor((firstWithPhoto['地點 / 活動']||'').trim());
-  }
+
+  // 起始顯示：有相片的第一個點
+  const firstWithPhoto=rows.find(r=>PHOTO_MAP[(r['地點 / 活動']||'').trim()]);
+  if(firstWithPhoto) showPhotosFor((firstWithPhoto['地點 / 活動']||'').trim());
+  else{ document.getElementById('photos').innerHTML=''; document.getElementById('photosEmpty').style.display='block'; }
 }
 
-/* ------------------ 啟動 ------------------ */
+document.getElementById('btnToggleTL').onclick=()=>{const b=document.getElementById('tlBox');b.style.display=(b.style.display==='none'?'':'none');};
 loadAll();
 </script>
 </body>
