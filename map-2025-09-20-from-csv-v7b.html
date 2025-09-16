@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>9/20 互動地圖（v7：車MapCode/可有可無/自動補座標）</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  html,body{height:100%;margin:0} #map{height:100%}
+  .leaflet-popup-content{min-width:240px}
+  
+
+  .carcode{font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+           background:#fff6d6;border:1px solid #f59e0b;border-radius:8px;
+           padding:2px 8px;display:inline-block;line-height:1.6;letter-spacing:0.3px;color:#1f2937}
+  .copybtn{margin-left:6px;padding:2px 8px;border:1px solid #cbd5e1;border-radius:6px;
+           background:#f8fafc;cursor:pointer;font-size:12px;color:#334155}
+  .copybtn:hover{background:#e2e8f0}
+
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CSV='timeline-2025-09-20_v6.csv';
+function parseCSV(t){const r=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i],n=t[i+1];if(c=='"'){if(q&&n=='"'){f+='"';i++;}else q=!q;}else if(c==','&&!q){row.push(f);f='';}else if((c=='\n'||c=='\r')&&!q){if(f!==''||row.length){row.push(f);r.push(row);row=[];f='';}if(c=='\r'&&n=='\n')i++;}else f+=c;}if(f!==''||row.length){row.push(f);r.push(row);}const h=r.shift().map(x=>x.replace(/^\uFEFF/,'').trim());return r.map(cols=>{const o={};h.forEach((k,i)=>o[k]=cols[i]||'');return o;});}
+function coordFrom(url){try{const u=new URL(url);if(u.searchParams.get('query')){const [la,lo]=u.searchParams.get('query').split(',').map(Number);return [la,lo];}}catch(e){}return null;}
+function normTitle(t){return (t||'').replace(/^[0-9①-⑳\.\s]+/,'').trim();}
+async function geocode(title){
+  const key='geo:'+title;const c=localStorage.getItem(key);
+  if(c){try{return JSON.parse(c);}catch(e){}}
+  const q=encodeURIComponent(title+' Kamakura Kanagawa Japan');
+  const r=await fetch('https://nominatim.openstreetmap.org/search?q='+q+'&format=json&limit=1');
+  if(r.ok){const j=await r.json();if(j && j[0]){const xy=[+j[0].lat,+j[0].lon];localStorage.setItem(key,JSON.stringify(xy));return xy;}}
+  return null;
+}
+(async()=>{
+  const t=await (await fetch(CSV)).text();
+  const rows=parseCSV(t).filter(r=>normTitle(r['地點 / 活動']));
+  const map=L.map('map').setView([35.318,139.53],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  const main=L.layerGroup().addTo(map), opt=L.layerGroup().addTo(map), wcLayer=L.layerGroup().addTo(map);
+  for(const r of rows){
+    const title=normTitle(r['地點 / 活動']);
+    const link=r['📍 景點連結'];
+    const car=r['🚙車Map Code']||r['🚙車MapCode']||'';
+    const wc=r['🚻 廁所']||'';
+    const kind=(r['類別']||'').trim();
+    const note=(r['備註']||'').trim();
+    const isOptional = /可有可無/.test(kind+note);
+    let xy=coordFrom(link);
+    if(!xy){xy=await geocode(title);}
+    if(!xy){console.warn('無座標',title);continue;}
+    const mk=L.marker(xy);
+    const html=`<b>${title}</b>`
+      + (car?'<br>🚙 車Map Code：<span class="carcode" id="carcode">'+car+'</span>'+' <button class="copybtn" onclick="navigator.clipboard.writeText(\''+car+'\')">複製</button>':'')
+      + (wc?'<br>🚻 '+wc:'')
+      + (kind?'<br>類別：'+kind:'')
+      + (note?'<br>備註：'+note:'')
+      + (link?'<br><a href="${link}" target="_blank">📍 Google 地圖</a>':'');
+    mk.bindPopup(html);
+    mk.on('click',()=>{ try{ parent.postMessage({type:'marker-click',place:title},'*'); }catch(e){} });
+    (isOptional?opt:main).addLayer(mk);
+    if(wc){ L.circleMarker(xy,{radius:5,color:'#2ecc71'}).addTo(wcLayer); }
+  }
+  L.control.layers(null,{"主行程/推薦":main,"可有可無":opt,"🚻 廁所":wcLayer}).addTo(map);
+})();</script>
+</body></html>
