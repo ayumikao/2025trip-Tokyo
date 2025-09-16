@@ -1,371 +1,273 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>2025 東京近郊旅遊 | 9/20 鎌倉</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>2025 東京近郊旅遊｜9/20 鎌倉</title>
 <link rel="preconnect" href="https://unpkg.com">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
-:root{
-  --bg:#0e1621;
-  --bg2:#0b1320;
-  --panel:#0f1b2b;
-  --card:#101b2a;
-  --text:#e9f1ff;
-  --muted:#9fb3c8;
-  --accent:#3b82f6;
-  --chip:#1a2740;
-  --mapcode:#ffa94d;
-  --success:#16a34a;
-  --danger:#ef4444;
-  --shadow:0 8px 24px rgba(0,0,0,.35);
-  --radius:18px;
-  --navH:98px;
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,"PingFang TC","Noto Sans TC",Segoe UI,Roboto,Helvetica,Arial}
-a{color:#91b4ff;text-decoration:none}
-a:hover{opacity:.9}
-.container{max-width:980px;margin:0 auto;padding:16px}
-h1{font-size:clamp(24px,4.5vw,40px);margin:8px 0 6px}
-.route{color:var(--muted);font-weight:600;letter-spacing:.08em;margin-bottom:12px}
-/* date row */
-.date-row{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(14,22,33,.98),rgba(14,22,33,.85));backdrop-filter: blur(6px);padding:10px 12px;margin:0 -12px 8px;border-bottom:1px solid rgba(255,255,255,.06)}
-.date-buttons{display:flex;gap:12px;overflow:auto;padding-bottom:4px}
-.date-btn{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;
-  min-width:110px;padding:10px 14px;border-radius:999px;border:2px solid rgba(255,255,255,.15);background:#0f1a2a}
-.date-btn.active{border-color:#4f86ff;box-shadow:0 0 0 6px rgba(79,134,255,.12) inset}
-.date-btn .d{font-weight:800;font-size:20px;letter-spacing:.04em}
-.date-btn .p{font-size:13px;color:var(--muted)}
-/* section titles */
-.section-title{font-size:18px;margin:16px 0 8px;font-weight:800}
-/* map */
-.map-wrap{position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:#0b1421}
-#map{height:62vh;min-height:420px}
-/* layer panel */
-.layer-panel{position:absolute;right:12px;top:12px;background:rgba(7,12,20,.88);padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);z-index:10;box-shadow:var(--shadow)}
-.layer{display:flex;gap:8px;align-items:center;margin:6px 0}
-.layer input{width:18px;height:18px}
-/* vertical locate buttons */
-.vbtn{position:absolute;right:12px;background:rgba(16,27,42,.95);border:1px solid rgba(255,255,255,.08);
-  color:#fff;border-radius:12px;padding:8px 6px;font-weight:800;letter-spacing:.1em;writing-mode:vertical-rl;text-orientation:upright;
-  box-shadow:var(--shadow);cursor:pointer;user-select:none}
-.vbtn:hover{background:#142338}
-#btnLocate{top:120px}
-#btnFollow{top:210px}
-.vbtn.active{outline:2px solid var(--accent);background:#11243d}
-/* photo wall */
-.album{min-height:120px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:var(--card);padding:12px}
-.grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
-.grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.08)}
-.empty{color:var(--muted)}
-/* timeline */
-.timeline{margin-top:12px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow)}
-.t-header{display:grid;grid-template-columns:90px 1fr 72px 140px;background:#0c1829;padding:10px 12px;font-weight:800;position:sticky;top:calc(0px + 66px);z-index:15;border-bottom:1px solid rgba(255,255,255,.08)}
-.t-row{border-top:1px dashed rgba(255,255,255,.1);padding:12px}
-.t-grid{display:grid;grid-template-columns:90px 1fr 72px 140px;gap:8px;align-items:center}
-.t-time{white-space:pre-line;font-weight:800}
-.t-place .pin{display:inline-block;margin-right:6px}
-.t-type{color:var(--muted);font-weight:800}
-.mapcode{justify-self:end}
-.code-pill{display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#2b2b2b,#1f1f1f);border:1px solid rgba(255,255,255,.1);
-  border-radius:16px;padding:6px 12px;min-width:120px;justify-content:center}
-.code-pill .car{filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
-.code-pill .num{color:#ffd27c;font-weight:900;letter-spacing:.05em}
-.copy{cursor:pointer;font-size:18px;opacity:.8}
-.copy:hover{opacity:1}
-/* remarks band like your preferred style */
-.remark{margin:8px 0 4px;background:#0d1a2c;border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.06);color:#e6eeff}
-.remark b{color:#cfe0ff}
-@media (min-width:820px){
-  #map{height:60vh}
-  .t-header{top:calc(0px + 70px)}
-  .date-btn{min-width:140px}
-}
+  :root{
+    --bg:#0f1a22; --panel:#121f29; --muted:#9fb3c5; --txt:#e7f0f7;
+    --pill:#1a2733; --accent:#7aa7ff; --orange:#ffc36e;
+    --brand:#a3d3ff;
+  }
+  html,body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",Arial,"Apple Color Emoji","Segoe UI Emoji";}
+  .wrap{max-width:1080px;margin:0 auto;padding:12px 14px 32px;}
+  h1{margin:8px 2px 10px;font-size:28px;letter-spacing:.05em}
+  .sub{color:var(--muted);margin:4px 2px 12px;font-size:14px}
+  /* date tabs (保持簡單、不大改你的原樣式) */
+  .tabs{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 8px}
+  .tab{flex:0 0 auto;border:2px solid rgba(122,167,255,.4);border-radius:28px;padding:10px 18px;text-align:center}
+  .tab .d{font-weight:700;font-size:18px}
+  .tab .p{font-size:12px;opacity:.9;margin-top:2px}
+  .tab.active{box-shadow:0 0 0 3px rgba(122,167,255,.25) inset}
+  .sticky-head{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg),rgba(15,26,34,.7));backdrop-filter:saturate(130%) blur(6px)}
+  /* map box */
+  .card{background:var(--panel);border-radius:14px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin:10px 0 18px}
+  #map{height:420px;border-radius:10px}
+  /* layer panel inside map (top-right) */
+  .layerCtl{position:absolute;right:14px;top:14px;z-index:400;background:rgba(18,31,41,.92);border-radius:12px;padding:10px 12px}
+  .layerCtl label{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}
+  /* vertical locate/follow buttons inside map (right side, vertical) */
+  .vBtns{position:absolute;right:14px;top:170px;z-index:401;display:flex;flex-direction:column;gap:10px}
+  .vBtn{background:rgba(18,31,41,.95);border-radius:14px;padding:8px 6px;text-align:center;line-height:1.05;border:1px solid rgba(255,255,255,.1);cursor:pointer}
+  .vBtn span{display:block;white-space:pre;font-weight:700;letter-spacing:.25em}
+  .vBtn:active{transform:scale(.98)}
+  /* photo wall */
+  .photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .ph{aspect-ratio:16/10;background:#09131a;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6b8297;border:1px dashed #243746}
+  .ph img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+  /* timeline */
+  .tl{width:100%;border-collapse:separate;border-spacing:0 10px}
+  .tl thead th{position:sticky;top:62px;background:var(--bg);z-index:3;padding:10px 8px;color:#c8d9e6;border-bottom:1px solid #264056}
+  .row{background:var(--panel);border-radius:12px;overflow:hidden}
+  .cell{padding:12px 14px;vertical-align:top}
+  .time{width:90px;white-space:nowrap}
+  .place{}
+  .cat{width:70px}
+  .code{width:150px}
+  .noteBar{grid-column:1/-1;background:#0b1620;border-top:1px solid #1d3345;padding:10px 14px}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:#172635;border-radius:28px;padding:6px 12px}
+  .pill.orange{background:#2a2318;color:#ffd59b;border:1px solid #7b5b22}
+  .gmap{color:#7ab6ff;text-decoration:none;border-bottom:2px solid #2b4c6b}
+  .muted{color:#8ea3b5}
+  /* Leaflet z-fix so map never covers tabs */
+  .leaflet-container{z-index:1}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>2025 東京近郊旅遊</h1>
-  <div class="route">澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</div>
-
-  <div class="date-row" id="dateRow">
-    <div class="date-buttons">
-      <div class="date-btn active"><div class="d">09/20</div><div class="p">鎌倉</div></div>
-      <div class="date-btn"><div class="d">09/21</div><div class="p">箱根</div></div>
-      <div class="date-btn"><div class="d">09/22</div><div class="p">熱海</div></div>
-      <div class="date-btn"><div class="d">09/23</div><div class="p">河口湖</div></div>
+<div class="wrap">
+  <div class="sticky-head">
+    <h1>2025 東京近郊旅遊｜9/20 鎌倉</h1>
+    <div class="sub">澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</div>
+    <div class="tabs">
+      <div class="tab active"><div class="d">09/20</div><div class="p">鎌倉</div></div>
+      <div class="tab"><div class="d">09/21</div><div class="p">箱根</div></div>
+      <div class="tab"><div class="d">09/22</div><div class="p">熱海</div></div>
+      <div class="tab"><div class="d">09/23</div><div class="p">河口湖</div></div>
     </div>
   </div>
 
-  <div class="section-title">互動地圖（點圖標看資訊／點任一標記顯示相簿）</div>
-  <div class="map-wrap">
+  <div class="card" style="position:relative;">
     <div id="map"></div>
-    <div class="layer-panel" id="layerPanel">
-      <div class="layer"><input type="checkbox" id="layerMain" checked/><label for="layerMain">主行程/精華或近似</label></div>
-      <div class="layer"><input type="checkbox" id="layerOpt" checked/><label for="layerOpt">可有可無</label></div>
-      <div class="layer"><input type="checkbox" id="layerToilet" checked/><label for="layerToilet">廁所</label></div>
+    <div class="layerCtl" id="layerCtl">
+      <label><input type="checkbox" id="chkMain" checked> 主行程/精華或近似</label>
+      <label><input type="checkbox" id="chkOpt" checked> 可有可無</label>
+      <label><input type="checkbox" id="chkToilet" checked> 廁所</label>
     </div>
-    <div class="vbtn" id="btnLocate">我在這</div>
-    <div class="vbtn" id="btnFollow">跟隨我</div>
+    <div class="vBtns">
+      <div class="vBtn" id="btnLocate"><span>我\n在\n這</span></div>
+      <div class="vBtn" id="btnFollow"><span>跟\n隨\n我</span></div>
+    </div>
   </div>
 
-  <div class="section-title">照片牆（點任一標記顯示相簿）</div>
-  <div class="album">
-    <div id="albumGrid" class="grid"></div>
-    <div id="albumEmpty" class="empty">暫無照片</div>
+  <div class="card">
+    <h3 style="margin:6px 4px 10px;">照片牆（點任一標記顯示相簿）</h3>
+    <div id="photoWall" class="photos">
+      <div class="ph" id="phEmpty">暫無照片</div>
+    </div>
   </div>
 
-  <div class="section-title">時間軸（9/20 +15 分鐘緩衝版）</div>
-  <div style="color:var(--muted);font-size:12px;margin-bottom:8px">本頁讀取：timeline-2025-09-20_v6.csv、photos-2025-09-20-mapped.csv、coords-override-2025-09-20.json</div>
-
-  <div class="timeline" id="timeline">
-    <div class="t-header">
-      <div>時間</div><div>地點 / 活動</div><div>類別</div><div>車Map Code</div>
+  <div class="card">
+    <h3 style="margin:6px 4px 4px;">時間軸（9/20 +15 分鐘緩衝版）</h3>
+    <div class="muted" style="margin:2px 4px 10px;font-size:12px">
+      本頁讀取：timeline-2025-09-20_v6.csv、photos-2025-09-20-mapped.csv、coords-override-2025-09-20.json
     </div>
-    <div id="rows"></div>
+    <table class="tl" id="tl">
+      <thead>
+        <tr>
+          <th class="time">時間</th>
+          <th>地點 / 活動</th>
+          <th class="cat">類別</th>
+          <th class="code">車Map Code</th>
+        </tr>
+      </thead>
+      <tbody id="tlBody"></tbody>
+    </table>
   </div>
 </div>
 
 <script>
-// Minimal robust CSV parser (supports quoted fields and commas inside quotes)
-function parseCSV(text){
-  const rows=[]; let cur='', row=[], inQ=false;
-  text = text.replace(/^\\uFEFF/, ''); // strip BOM
-  for (let i=0;i<text.length;i++){
-    const c=text[i];
-    if (c=='"'){
-      if (inQ && text[i+1]=='"'){ cur+='"'; i++; } else { inQ=!inQ; }
-    } else if (c==',' && !inQ){
-      row.push(cur); cur='';
-    } else if ((c=='\\n' || c=='\\r') && !inQ){
-      if (cur!=='' || row.length>0){ row.push(cur); rows.push(row); }
-      cur=''; row=[];
-      if (c=='\\r' && text[i+1]=='\\n') i++; // handle CRLF
-    } else {
-      cur+=c;
+const FILES = {
+  timeline: 'timeline-2025-09-20_v6.csv',
+  photos: 'photos-2025-09-20-mapped.csv',
+  coords: 'coords-override-2025-09-20.json'
+};
+let followUser = false, userMarker=null, userWatchId=null;
+
+const map = L.map('map',{ zoomControl:true }).setView([35.31,139.54], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom: 19, attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const gMain = L.layerGroup().addTo(map);
+const gOpt = L.layerGroup().addTo(map);
+const gToilet = L.layerGroup().addTo(map);
+let mainLine = null;
+
+// checkbox show/hide
+document.getElementById('chkMain').addEventListener('change',e=>{ if(e.target.checked){map.addLayer(gMain);}else{map.removeLayer(gMain);} if(mainLine){ e.target.checked? map.addLayer(mainLine): map.removeLayer(mainLine);} });
+document.getElementById('chkOpt').addEventListener('change',e=>{ e.target.checked? map.addLayer(gOpt): map.removeLayer(gOpt); });
+document.getElementById('chkToilet').addEventListener('change',e=>{ e.target.checked? map.addLayer(gToilet): map.removeLayer(gToilet); });
+
+// locate buttons
+document.getElementById('btnLocate').onclick = ()=>{
+  if(!navigator.geolocation){ alert('此裝置不支援定位'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const latlng = [pos.coords.latitude, pos.coords.longitude];
+    if(!userMarker){
+      userMarker = L.marker(latlng,{title:'我在這'}).addTo(map);
+    }else{
+      userMarker.setLatLng(latlng);
     }
-  }
-  if (cur!=='' || row.length>0){ row.push(cur); rows.push(row); }
-  // header -> objects
-  const head = rows.shift().map(h=>h.trim());
-  return rows.filter(r=>r.length && r.some(x=>x.trim()!=='')).map(r=>{
-    const o={}; head.forEach((h,idx)=>o[h]= (r[idx]??'').trim()); return o;
-  });
-}
-function byId(id){ return document.getElementById(id); }
-function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
-function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
-function normName(s){ return (s||'').replace(/\\s+/g,'').replace(/[()（）]/g,'').toLowerCase(); }
-
-// Global data
-let coordsMap={}, photosByPlace={}, mainPoints=[], optPoints=[], toiletPoints=[];
-
-// Load files
-Promise.all([
-  fetch('coords-override-2025-09-20.json').then(r=>r.json()),
-  fetch('photos-2025-09-20-mapped.csv').then(r=>r.text()).then(parseCSV),
-  fetch('timeline-2025-09-20_v6.csv').then(r=>r.text()).then(parseCSV)
-]).then(([coords, photos, timeline])=>{
-  coordsMap = coords;
-  // group photos
-  photos.forEach(p=>{
-    const key = normName(p['地點'] || p['地點/活動'] || p['name'] || p['place']);
-    if (!key) return;
-    photosByPlace[key] = photosByPlace[key] || [];
-    const src = p['照片'] || p['url'] || p['src'] || p['檔名'] || '';
-    if (src) photosByPlace[key].push(src);
-  });
-
-  renderMapAndTimeline(timeline);
-}).catch(err=>{
-  console.error(err);
-  alert('讀取檔案時發生錯誤，請確認三個檔案與本頁同資料夾。');
-});
-
-// Leaflet
-let map, mainLayer, optLayer, toiletLayer, routeLine, locateMarker, follow=false;
-
-function renderMapAndTimeline(timeline){
-  // Prepare points
-  function getCoord(name){
-    const arr = coordsMap[name];
-    if (Array.isArray(arr) && arr.length===2) return {lat:parseFloat(arr[0]), lng:parseFloat(arr[1])};
-    return null;
-  }
-
-  mainPoints=[]; optPoints=[]; toiletPoints=[];
-  timeline.forEach(row=>{
-    const name = row['地點'] || row['地點/活動'] || '';
-    const type = (row['類別'] || '').trim();
-    const coord = getCoord(name);
-    if (!coord) return;
-    const item={ name, coord, row };
-    if (type==='可有可無'){ optPoints.push(item); }
-    else if (type==='廁所'){ toiletPoints.push(item); }
-    else { mainPoints.push(item); }
-  });
-
-  // Init map
-  map = L.map('map', { zoomControl:false, attributionControl:true });
-  L.control.zoom({ position:'topleft' }).addTo(map);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, crossOrigin:true
-  }).addTo(map);
-
-  const iconMain = L.icon({ iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png', iconAnchor:[12,41], popupAnchor:[0,-34] });
-  function addMarkers(arr, group, color='#2f7ef7'){
-    arr.forEach(({name,coord,row})=>{
-      const m=L.marker([coord.lat,coord.lng],{icon:iconMain});
-      m.bindPopup(renderPopup(name,row), {autoPan:true,maxWidth:320});
-      m.on('click',()=>showAlbum(name));
-      group.addLayer(m);
+    map.setView(latlng, 15);
+  }, err=>alert('定位失敗'));
+};
+document.getElementById('btnFollow').onclick = ()=>{
+  if(!navigator.geolocation){ alert('此裝置不支援定位'); return; }
+  followUser = !followUser;
+  // visual feedback
+  document.getElementById('btnFollow').style.outline = followUser? '2px solid #7aa7ff' : 'none';
+  if(followUser){
+    userWatchId = navigator.geolocation.watchPosition(pos=>{
+      const latlng = [pos.coords.latitude, pos.coords.longitude];
+      if(!userMarker){ userMarker = L.marker(latlng,{title:'我在這'}).addTo(map); }
+      else userMarker.setLatLng(latlng);
+      map.setView(latlng, 16);
     });
+  }else if(userWatchId){
+    navigator.geolocation.clearWatch(userWatchId);
+    userWatchId=null;
   }
-  mainLayer = L.layerGroup().addTo(map);
-  optLayer = L.layerGroup().addTo(map);
-  toiletLayer = L.layerGroup().addTo(map);
-  addMarkers(mainPoints, mainLayer);
-  addMarkers(optPoints, optLayer);
-  addMarkers(toiletPoints, toiletLayer);
+};
 
-  // Route polyline for main only
-  const routeCoords = mainPoints.map(p=>[p.coord.lat,p.coord.lng]);
-  if (routeLine) routeLine.remove();
-  if (routeCoords.length>1){
-    routeLine = L.polyline(routeCoords, {color:'#4aa3ff',weight:4,opacity:.7}).addTo(map);
-  }
-  // Fit bounds
-  const allPts = [...mainPoints,...optPoints,...toiletPoints];
-  if (allPts.length){
-    const b = L.latLngBounds(allPts.map(p=>[p.coord.lat,p.coord.lng]));
-    map.fitBounds(b.pad(0.2));
-  } else {
-    map.setView([35.325,139.55], 12);
-  }
+// utilities
+function hEscape(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+function createMapCodePill(code){ if(!code) return ''; return `<span class="pill orange">🚗&nbsp;${hEscape(code)}</span>`; }
 
-  // Layer toggles
-  byId('layerMain').onchange=()=>{ if(byId('layerMain').checked) map.addLayer(mainLayer); else map.removeLayer(mainLayer); toggleRoute(); };
-  byId('layerOpt').onchange=()=>{ if(byId('layerOpt').checked) map.addLayer(optLayer); else map.removeLayer(optLayer); };
-  byId('layerToilet').onchange=()=>{ if(byId('layerToilet').checked) map.addLayer(toiletLayer); else map.removeLayer(toiletLayer); };
-  function toggleRoute(){
-    if (!routeLine) return;
-    const on = byId('layerMain').checked;
-    if (on && !map.hasLayer(routeLine)) routeLine.addTo(map);
-    if (!on && map.hasLayer(routeLine)) map.removeLayer(routeLine);
-  }
+// load coords then csvs
+let COORDS={}, PHOTOS_MAP={}; // name -> [ [url,caption], ... ]
+fetch(FILES.coords).then(r=>r.json()).then(json=>{ COORDS=json; loadPhotos(); }).catch(()=>{ COORDS={}; loadPhotos(); });
 
-  // Locate + follow
-  byId('btnLocate').onclick=()=>{
-    if (!navigator.geolocation){ alert('此瀏覽器不支援定位'); return; }
-    navigator.geolocation.getCurrentPosition(pos=>{
-      const {latitude,longitude}=pos.coords;
-      if (!locateMarker){
-        locateMarker = L.marker([latitude,longitude],{ title:'我在這' }).addTo(map);
-      } else {
-        locateMarker.setLatLng([latitude,longitude]);
-      }
-      map.panTo([latitude,longitude]);
-    },()=>alert('定位失敗'));
-  };
-  byId('btnFollow').onclick=()=>{
-    follow = !follow;
-    byId('btnFollow').classList.toggle('active', follow);
-    if (!navigator.geolocation){ alert('此瀏覽器不支援定位'); return; }
-    if (follow){
-      watchId = navigator.geolocation.watchPosition(pos=>{
-        const p=[pos.coords.latitude,pos.coords.longitude];
-        if (!locateMarker) locateMarker = L.marker(p,{title:'我在這'}).addTo(map);
-        locateMarker.setLatLng(p);
-        map.panTo(p);
+function loadPhotos(){
+  Papa.parse(FILES.photos,{
+    download:true, header:true, skipEmptyLines:true,
+    complete: res => {
+      // expect columns: place/name, url, caption(optional)
+      res.data.forEach(row=>{
+        const name = (row.place||row.name||row['地點']||row['地點/活動']||'').trim();
+        const url = row.url || row.URL || row['url'];
+        if(!name || !url) return;
+        if(!PHOTOS_MAP[name]) PHOTOS_MAP[name]=[];
+        PHOTOS_MAP[name].push([url, row.caption||'']);
       });
-    } else {
-      if (watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+      loadTimeline();
+    },
+    error: _ => loadTimeline()
+  });
+}
+
+function loadTimeline(){
+  Papa.parse(FILES.timeline,{
+    download:true, header:true, skipEmptyLines:true,
+    complete: res => {
+      const rows = res.data;
+      // detect header keys
+      function keyLike(keys){ for(const k of keys){ if(k in rows[0]) return k; } return null; }
+      const kTime = keyLike(['時間','time','Time']);
+      const kPlace= keyLike(['地點/活動','地點','活動','place','name']);
+      const kNote = keyLike(['備註','備註 ','note','Note']);
+      const kCat  = keyLike(['類別','分類','category']);
+      const kCode = keyLike(['車Map Code','車MapCode','Map Code','mapcode','map code']);
+      const kGmap = keyLike(['Google地圖','Google 地圖','Google Map','Google map','google','地圖']);
+
+      const mainPoints=[];
+      let bounds = [];
+      rows.forEach((r,idx)=>{
+        const place = (r[kPlace]||'').trim();
+        if(!place) return;
+        const cat = (r[kCat]||'').trim();
+        const ll = COORDS[place];
+        // timeline
+        const tr = document.createElement('tr'); tr.className='row';
+        function td(cls, html){ const td=document.createElement('td'); td.className='cell '+(cls||''); td.innerHTML=html; return td; }
+        const timeTxt = hEscape(r[kTime]||'');
+        const timeHtml = timeTxt.replace(/-/,'<br>').replace('：',':').replace('：',' : ');
+        tr.appendChild(td('time', timeHtml));
+        let gmapLink=''; if(r[kGmap]) gmapLink = `<div style="margin-top:6px;"><a class="gmap" href="${hEscape(r[kGmap])}" target="_blank">📍 Google 地圖</a></div>`;
+        tr.appendChild(td('place', `<div style="font-weight:700">${hEscape(place)}</div>${gmapLink}`));
+        tr.appendChild(td('cat', hEscape(cat)));
+        tr.appendChild(td('code', createMapCodePill(r[kCode])));
+        document.getElementById('tlBody').appendChild(tr);
+        // note bar
+        if(r[kNote]){
+          const nr = document.createElement('tr');
+          const nd = document.createElement('td'); nd.className='noteBar'; nd.colSpan=4; nd.textContent='備註： '+(r[kNote]);
+          nr.appendChild(nd); document.getElementById('tlBody').appendChild(nr);
+        }
+        // map
+        if(ll && Array.isArray(ll)){
+          const m = L.marker(ll,{ title:place});
+          let group = gMain;
+          if(cat.includes('廁所')) group=gToilet; else if(cat.includes('可有可無')) group=gOpt;
+          m.addTo(group);
+          const codeHtml = createMapCodePill(r[kCode]);
+          const note = r[kNote]? `<div class="muted" style="margin-top:6px">${hEscape(r[kNote])}</div>`:'';
+          const gLink = r[kGmap]? `<div style="margin-top:8px"><a class="gmap" href="${hEscape(r[kGmap])}" target="_blank">📍 Google 地圖</a></div>`:'';
+          m.bindPopup(`<div style="font-size:16px;font-weight:800;margin-bottom:6px">${hEscape(place)}</div>${codeHtml}${note}${gLink}`,{autoPan:true});
+          // photo wall hook
+          m.on('click',()=>showPhotos(place));
+          bounds.push(ll);
+          if(group===gMain) mainPoints.push(ll);
+        }
+      });
+      if(bounds.length){ map.fitBounds(bounds,{ padding:[20,20]}); }
+      if(mainPoints.length>1){
+        mainLine = L.polyline(mainPoints,{ color:'#4aa3ff', weight:4, opacity:0.8 }).addTo(map);
+      }
     }
-  };
-
-  // Timeline
-  renderTimeline([...mainPoints, ...optPoints, ...toiletPoints], timeline);
-}
-
-// Popup renderer
-function renderPopup(name,row){
-  const mapcode = (row['車Map Code'] || row['車MapCode'] || row['Map Code'] || '').trim();
-  const notes = (row['備註'] || '').trim();
-  const g = (row['Google 地圖'] || row['Google地圖'] || row['地圖'] || '').trim();
-  const codeHtml = mapcode ? `<div class="code-pill"><span class="car">🚗</span><span class="num">${esc(mapcode)}</span><span class="copy" title="複製" onclick="copyText('${esc(mapcode)}')">📋</span></div>` : '';
-  const link = g ? `<a href="${g}" target="_blank">📍 Google 地圖</a>` : '';
-  return `<div style="min-width:240px">
-    <div style="font-weight:900;font-size:18px;margin-bottom:6px">${esc(name)}</div>
-    ${codeHtml}
-    ${notes ? `<div style="color:#c8d8f7;margin-top:8px">${esc(notes)}</div>`:''}
-    <div style="margin-top:8px">${link}</div>
-  </div>`;
-}
-function copyText(t){ navigator.clipboard?.writeText(t); }
-
-// Album
-function showAlbum(place){
-  const key = normName(place);
-  const list = photosByPlace[key] || [];
-  const grid = byId('albumGrid'), empty=byId('albumEmpty');
-  grid.innerHTML='';
-  if (!list.length){ empty.style.display='block'; return; }
-  empty.style.display='none';
-  list.slice(0,20).forEach(src=>{
-    // allow relative paths from assets/img or absolute URLs
-    const url = src.match(/^https?:/)? src : ('assets/img/'+src.replace(/^\\/?/,'').replace(/^assets\\/img\\//,''));
-    const img = document.createElement('img'); img.loading='lazy'; img.src=url; grid.appendChild(img);
   });
 }
 
-// Timeline builder
-function renderTimeline(points, timelineRows){
-  // build dictionary by place name to row(s)
-  const byName = {};
-  timelineRows.forEach(r=>{
-    const n = (r['地點'] || r['地點/活動'] || '').trim();
-    if (!n) return;
-    (byName[n] = byName[n] || []).push(r);
-  });
-
-  const rowsEl = byId('rows'); rowsEl.innerHTML='';
-  // keep original order from csv
-  const ordered = timelineRows.filter(r=> (r['地點']||r['地點/活動']||'').trim());
-  ordered.forEach(r=>{
-    const name = (r['地點'] || r['地點/活動']).trim();
-    const type = (r['類別']||'').trim();
-    const code = (r['車Map Code'] || r['車MapCode'] || '').trim();
-    const note = (r['備註']||'').trim();
-    const timeStr = ((r['時間']||'').replace(/\\s+/g,'').replace(/-/,'-') || '').split('-');
-    const tDisplay = timeStr.length===2 ? (timeStr[0]+ '\\n' + timeStr[1]) : (r['時間']||'').replace('-', '\\n');
-
-    const google = (r['Google 地圖'] || r['Google地圖'] || r['地圖'] || '').trim();
-    const row = document.createElement('div');
-    row.className='t-row';
-    row.innerHTML = `
-      <div class="t-grid">
-        <div class="t-time">${esc(tDisplay)}</div>
-        <div class="t-place"><span class="pin">📍</span><a href="${google||'#'}" target="_blank">${esc(name)}</a></div>
-        <div class="t-type">${esc(type||'')}</div>
-        <div class="mapcode">${code?`<div class="code-pill"><span class="car">🚗</span><span class="num">${esc(code)}</span><span class="copy" title="複製" onclick="copyText('${esc(code)}')">📋</span></div>`:''}</div>
-      </div>
-      ${note?`<div class="remark"><b>備註：</b>${esc(note)}</div>`:''}
-    `;
-    rowsEl.appendChild(row);
+function showPhotos(place){
+  const wall = document.getElementById('photoWall');
+  wall.innerHTML='';
+  const arr = PHOTOS_MAP[place]||[];
+  if(!arr.length){
+    wall.innerHTML = '<div class="ph">暫無照片</div>';
+    return;
+  }
+  arr.forEach(([url,cap])=>{
+    const div = document.createElement('div'); div.className='ph';
+    const img = new Image(); img.src=url; img.alt=cap||place;
+    img.onload=()=>{ div.innerHTML=''; div.appendChild(img); };
+    img.onerror=()=>{ div.textContent='載入失敗'; };
+    wall.appendChild(div);
   });
 }
-
-// Adjust sticky header offset to sit below date row
-function updateStickyTop(){
-  const dr = byId('dateRow');
-  const top = dr.getBoundingClientRect().height;
-  document.querySelectorAll('.t-header').forEach(h=> h.style.top = top+'px');
-}
-window.addEventListener('load', updateStickyTop);
-window.addEventListener('resize', updateStickyTop);
 </script>
 </body>
 </html>
