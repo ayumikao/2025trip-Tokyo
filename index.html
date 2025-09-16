@@ -1,105 +1,69 @@
+
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>2025 東京近郊旅遊</title>
+  <title>2025 東京近郊旅遊 - 9/20 鎌倉</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
-    body { background:#0d1117; color:#fff; font-family:sans-serif; margin:0; }
-    header { padding:10px; text-align:center; background:#0d1117; position:sticky; top:0; z-index:1000; }
-    h1 { font-size:20px; margin:5px 0; }
-    .sub { color:#aaa; font-size:14px; }
-    .day-buttons { display:flex; justify-content:center; gap:8px; flex-wrap:nowrap; overflow-x:auto; padding:10px; }
-    .day-buttons button {
-      background:#0d1117; border:2px solid #3b4cca; border-radius:12px; padding:6px 12px;
-      color:#fff; font-size:14px; flex-shrink:0; min-width:70px;
+    body { font-family: sans-serif; background:#0b1622; color:#fff; margin:0; }
+    header { padding:10px; text-align:center; font-size:20px; font-weight:bold; }
+    .date-btn { 
+      display:inline-block; padding:10px 15px; margin:5px; border-radius:12px; 
+      background:#111a2a; border:2px solid #2a3f5f; color:#fff; text-align:center;
     }
-    .day-buttons button.active { background:#3b4cca; }
-    #map { height:400px; margin:10px; border-radius:10px; }
-    .map-buttons {
-      position:absolute; right:10px; bottom:50px; display:flex; flex-direction:column; gap:8px; z-index:1001;
-    }
-    .map-buttons button {
-      writing-mode: vertical-rl; text-orientation: upright;
-      background:#1e293b; color:#fff; border:none; border-radius:6px; padding:4px 2px; font-size:12px;
-    }
-    #layerControl { position:absolute; top:10px; right:10px; z-index:1001; background:#1e293b; color:#fff; padding:6px; border-radius:6px; font-size:12px; }
-    #photos { margin:10px; padding:10px; background:#111827; border-radius:8px; }
-    #timeline { margin:10px; padding:10px; background:#111827; border-radius:8px; }
-    table { width:100%; border-collapse:collapse; color:#fff; font-size:14px; }
-    th, td { padding:6px; border-bottom:1px solid #333; vertical-align:top; }
-    th { background:#1f2937; position:sticky; top:0; }
-    .mapcode { background:#fca311; color:#000; padding:2px 6px; border-radius:12px; display:inline-block; font-size:13px; }
-    .remark { color:#ccc; font-size:13px; margin-left:2em; }
+    .date-btn.active { background:#1939ff; }
+    #map { height: 320px; margin:10px; border-radius:10px; overflow:hidden; }
+    #photo-wall { margin:10px; padding:10px; border:1px solid #2a3f5f; border-radius:8px; background:#111a2a; }
+    #timeline { margin:10px; }
+    table { width:100%; border-collapse: collapse; margin-top:5px; }
+    th, td { border:1px solid #2a3f5f; padding:6px; text-align:left; }
+    th { background:#182233; }
+    .mapcode { background:#ffb84d; padding:2px 6px; border-radius:8px; color:#000; font-weight:bold; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>2025 東京近郊旅遊</h1>
-    <div class="sub">澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖</div>
-    <div class="day-buttons">
-      <button class="active">09/20<br><small>鎌倉</small></button>
-      <button>09/21<br><small>箱根</small></button>
-      <button>09/22<br><small>熱海</small></button>
-      <button>09/23<br><small>河口湖</small></button>
-    </div>
-  </header>
+  <header>2025 東京近郊旅遊｜9/20 鎌倉</header>
 
-  <div style="position:relative;">
-    <div id="map"></div>
-    <div id="layerControl">
-      <label><input type="checkbox" checked> 主行程</label><br>
-      <label><input type="checkbox" checked> 可有可無</label><br>
-      <label><input type="checkbox" checked> 廁所</label>
-    </div>
-    <div class="map-buttons">
-      <button id="locateBtn">我在這</button>
-      <button id="followBtn">跟隨我</button>
-    </div>
-  </div>
+  <div id="map"></div>
 
-  <div id="photos">
+  <div id="photo-wall">
     <h3>照片牆（點任一標記顯示相簿）</h3>
-    <div id="photoWall">暫無照片</div>
+    <p>暫無照片</p>
   </div>
 
   <div id="timeline">
     <h3>時間軸（9/20 +15 分鐘緩衝版）</h3>
-    <table id="timelineTable">
+    <table>
       <thead>
         <tr><th>時間</th><th>地點 / 活動</th><th>類別</th><th>車Map Code</th></tr>
       </thead>
       <tbody>
-        <tr><td>6:30–8:00</td><td>澀谷出發<br><a href="#">📍 Google 地圖</a><div class="remark">備註：預留1.5小時車程（含早高峰小堵車）</div></td><td>包車</td><td><span class="mapcode">🚗 579 223*51</span></td></tr>
-        <tr><td>8:00–8:10</td><td>7-11 鎌倉七里ガ浜店<br><a href="#">📍 Google 地圖</a><div class="remark">備註：上廁所</div></td><td>休息</td><td><span class="mapcode">🚗 8 181 231*33</span></td></tr>
+        <tr>
+          <td>6:30–8:00</td>
+          <td>澀谷出發<br><a href="#">📍 Google 地圖</a><br>備註：預留 1.5 小時車程（含早高峰小堵車）</td>
+          <td>包車</td>
+          <td><span class="mapcode">🚗 579 223*51</span></td>
+        </tr>
+        <tr>
+          <td>8:00–8:10</td>
+          <td>7-11 鎌倉七里ガ浜店<br><a href="#">📍 Google 地圖</a><br>備註：上廁所</td>
+          <td>休息</td>
+          <td><span class="mapcode">🚗 8 181 231*33</span></td>
+        </tr>
       </tbody>
     </table>
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    var map = L.map('map').setView([35.35, 139.55], 11);
+    var map = L.map('map').setView([35.318,139.55], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+      maxZoom: 19
     }).addTo(map);
-
-    var marker1 = L.marker([35.658, 139.701]).addTo(map).bindPopup("澀谷出發");
-    var marker2 = L.marker([35.308, 139.535]).addTo(map).bindPopup("7-11 鎌倉七里ガ浜店");
-
-    document.getElementById("locateBtn").onclick = function() {
-      map.locate({setView:true, maxZoom:16});
-    };
-    var follow = false;
-    document.getElementById("followBtn").onclick = function() {
-      follow = !follow;
-      if(follow) map.on('locationfound', onLocationFound);
-      else map.off('locationfound', onLocationFound);
-    };
-    function onLocationFound(e) {
-      L.marker(e.latlng).addTo(map).bindPopup("📍 我在這").openPopup();
-      if(follow) map.setView(e.latlng, 16);
-    }
+    var marker1 = L.marker([35.6581, 139.7017]).addTo(map).bindPopup("澀谷出發");
+    var marker2 = L.marker([35.308, 139.534]).addTo(map).bindPopup("7-11 鎌倉七里ガ浜店");
   </script>
 </body>
 </html>
