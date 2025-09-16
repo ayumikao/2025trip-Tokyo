@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>2025 行程｜互動地圖＋時間軸（v86b）</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root{
+    --bg:#0f172a; --fg:#e5e7eb; --muted:#94a3b8; --card:#0b1220; --border:#1f2937;
+    --accent:#60a5fa; --route:#0891b2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;}
+  a{color:#93c5fd;text-decoration:none}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(15,23,42,.85));border-bottom:1px solid var(--border)}
+  .wrap{max-width:1200px;margin:0 auto;padding:10px 12px}
+  h1{font-size:18px;margin:6px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{background:#0a0f1f;border:1px solid var(--border);border-radius:10px;padding:6px 10px;color:var(--fg);cursor:pointer}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+  @media(min-width:820px){ .grid{grid-template-columns: 1.2fr .8fr} }
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px}
+  #map{height:60vh;border-radius:10px;border:1px solid var(--border)}
+  @media(min-width:820px){ #map{height:72vh} }
+  .legend{position:absolute;right:14px;top:14px;background:#fff;color:#111;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;font-size:12px;box-shadow:0 8px 20px rgba(0,0,0,.15)}
+  .legend label{display:block;margin:4px 0}
+  .muted{color:var(--muted)}
+  .thumbs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  @media(min-width:820px){ .thumbs{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  .thumbs img{width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:#0a0f1f}
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{padding:8px;border-top:1px dashed #233046;vertical-align:top}
+  .nowrap{white-space:nowrap}
+  .mapcode{display:inline-flex;gap:6px;align-items:center;border:1px solid #475569;border-radius:999px;padding:1px 8px;font-size:12px}
+  .copy{cursor:pointer;opacity:.85}
+  /* Popup 高對比 */
+  .leaflet-popup-content{color:#111}
+  .leaflet-popup-content a{color:#2563eb}
+  /* Lightbox */
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:9999}
+  .lightbox.active{display:flex}
+  .lightbox img{max-width:92vw;max-height:88vh;border-radius:12px;border:1px solid #334155}
+  .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:26px;color:#fff;cursor:pointer;user-select:none;padding:16px}
+  .nav.left{left:8px}.nav.right{right:8px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>2025 東京近郊旅｜澀谷→鎌倉→箱根→熱海→伊豆半島
+    <button id="toggleFS" class="btn">全螢幕地圖</button>
+    <span class="muted">資料：timeline-2025-09-20_v6.csv / photos-2025-09-20-mapped.csv / coords-override-2025-09-20.json</span>
+  </h1>
+</div></header>
+
+<div class="wrap grid">
+  <div class="card" style="position:relative">
+    <div id="map" aria-label="互動地圖"></div>
+    <div class="legend">
+      <label><input type="checkbox" id="chk-main" checked> 主行程/精華或近似</label>
+      <label><input type="checkbox" id="chk-opt" checked> 可有可無</label>
+      <label><input type="checkbox" id="chk-wc" checked> 廁所</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div><strong>照片牆</strong> <span class="muted">（點任一標記顯示相簿）</span></div>
+    <div id="photos" class="thumbs" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card" style="grid-column:1 / -1">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div><strong>時間軸（9/20 +15 分鐘緩衝版）</strong></div>
+      <button id="toggleT" class="btn">展開 / 收合</button>
+    </div>
+    <div id="timeline" style="margin-top:8px">
+      <table class="table">
+        <thead><tr>
+          <th class="nowrap">時間</th><th>地點 / 活動</th><th>備註</th><th class="nowrap">類別</th><th class="nowrap">車Map Code</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox" class="lightbox" tabindex="-1">
+  <div class="nav left" id="lbPrev">‹</div>
+  <img id="lbImg" alt="photo"/>
+  <div class="nav right" id="lbNext">›</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+// --- 檔名（不動你的三份資料） ---
+const FILE_TIMELINE = 'timeline-2025-09-20_v6.csv';
+const FILE_PHOTOS   = 'photos-2025-09-20-mapped.csv';
+const FILE_OVERRIDE = 'coords-override-2025-09-20.json';
+
+// --- 補座標（你提供的兩點 + 澀谷起點）。不會改你的 JSON，只在 index 內生效 ---
+const DEFAULT_COORDS = {
+  '澀谷出發（包車）': [35.659, 139.700],
+  '鎌倉釜飯 kamakama ichibamaeten': [35.31733107267639, 139.55070335429878],
+  '雨備(西友大船店)': [35.3541173153161, 139.53365389550413]
+};
+
+// --- 工具 ---
+function isOptional(row){
+  const cat  = (row['類別'] || row.category || '').trim();
+  const note = (row['備註'] || row.note || '').trim();
+  return /可有可無/.test(cat) || /可有可無/.test(note);
+}
+
+function parseLatLngFromUrl(url=''){
+  if(!url) return null;
+  try{
+    // ?query=LAT,LNG
+    let m = url.match(/[?&]query=(-?\\d+\\.\\d+),\\s*(-?\\d+\\.\\d+)/);
+    if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+    // @LAT,LNG,
+    m = url.match(/@(-?\\d+\\.\\d+),\\s*(-?\\d+\\.\\d+)/);
+    if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+    // !3dLAT!4dLNG
+    m = url.match(/!3d(-?\\d+\\.\\d+)!4d(-?\\d+\\.\\d+)/);
+    if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+  }catch(e){}
+  return null;
+}
+
+function getPhotosColumns(header){
+  // 兼容三種欄名：照片檔名 / 檔名 / image
+  const lower = header.map(h=>h.trim().toLowerCase());
+  const placeKey = header.find(h=>/^(地點 ?\/ ?活動|對應地點|place)$/i.test(h)) || '地點 / 活動';
+  let filesKey = header.find(h=>/^(照片檔名|檔名|image|images?|files?)$/i.test(h));
+  if(!filesKey) filesKey = '照片檔名';
+  return {placeKey, filesKey};
+}
+
+function getTimelineColumns(header){
+  // 容錯：有 BOM、全形空白、英文備援
+  function find(re, fallback){ return header.find(h=>re.test(h)) || fallback; }
+  return {
+    start:  find(/^(時間起|start)$/i, '時間起'),
+    end:    find(/^(時間迄|end)$/i, '時間迄'),
+    name:   find(/^(地點 ?\/ ?活動|name|title)$/i, '地點 / 活動'),
+    note:   find(/^(備註|note|備考)$/i, '備註'),
+    cat:    find(/^(類別|category)$/i, '類別'),
+    link:   find(/^(📍 ?景點連結|連結|link|url)$/i, '📍 景點連結'),
+    wc:     find(/^(🚻 ?廁所|廁所|wc|toilet)$/i, '🚻 廁所'),
+    mapcode:find(/^(🚙?車?map ?code|map ?code)$/i, '🚙車Map Code')
+  };
+}
+
+function parseTimeToSortKey(t){
+  if(!t) return 0; const m=t.trim().match(/^(\\d{1,2}):(\\d{2})/); if(!m) return 0;
+  return parseInt(m[1])*60 + parseInt(m[2]);
+}
+
+function h(tag, attrs={}, children=[]){
+  const el = document.createElement(tag);
+  for(const k in attrs){
+    if(k==='class') el.className = attrs[k];
+    else if(k==='html') el.innerHTML = attrs[k];
+    else el.setAttribute(k, attrs[k]);
+  }
+  (Array.isArray(children)?children:[children]).filter(Boolean).forEach(ch=>{
+    if(typeof ch==='string') el.appendChild(document.createTextNode(ch));
+    else el.appendChild(ch);
+  });
+  return el;
+}
+
+// --- 地圖初始化 ---
+const map = L.map('map', {zoomControl:true}).setView([35.318,139.53], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+const grpMain = L.layerGroup().addTo(map);
+const grpOpt  = L.layerGroup().addTo(map);
+const grpWC   = L.layerGroup().addTo(map);
+let polyRoute = null;
+
+function syncLayers(){
+  document.getElementById('chk-main').checked ? map.addLayer(grpMain) : map.removeLayer(grpMain);
+  document.getElementById('chk-opt').checked  ? map.addLayer(grpOpt)  : map.removeLayer(grpOpt);
+  document.getElementById('chk-wc').checked   ? map.addLayer(grpWC)   : map.removeLayer(grpWC);
+}
+['chk-main','chk-opt','chk-wc'].forEach(id=>document.getElementById(id).addEventListener('change', syncLayers));
+
+// Lightbox
+let lbList=[], lbIdx=0;
+const lb = document.getElementById('lightbox'), lbImg = document.getElementById('lbImg');
+function openLB(i){ lbIdx=i; lbImg.src = lbList[lbIdx]; lb.classList.add('active'); lb.focus(); }
+function closeLB(){ lb.classList.remove('active'); }
+document.getElementById('lbPrev').onclick = ()=>{ if(lbList.length){ lbIdx=(lbIdx-1+lbList.length)%lbList.length; lbImg.src=lbList[lbIdx]; } };
+document.getElementById('lbNext').onclick = ()=>{ if(lbList.length){ lbIdx=(lbIdx+1)%lbList.length; lbImg.src=lbList[lbIdx]; } };
+lb.addEventListener('click', (e)=>{ if(e.target===lb) closeLB(); });
+window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeLB(); if(lb.classList.contains('active')){ if(e.key==='ArrowLeft') document.getElementById('lbPrev').click(); if(e.key==='ArrowRight') document.getElementById('lbNext').click(); } });
+
+// Data loaders
+function loadCSV(path){
+  return new Promise((resolve,reject)=>{
+    Papa.parse(path, {download:true,header:true,skipEmptyLines:true,complete:res=>resolve(res), error:err=>reject(err)});
+  });
+}
+async function loadJSON(path){ try{ const r=await fetch(path); if(!r.ok) return {}; return await r.json(); }catch(e){ return {}; } }
+
+function createPopup(row, cols){
+  const title = (row[cols.name]||'').trim();
+  const note  = (row[cols.note]||'').trim();
+  const url   = (row[cols.link]||'').trim();
+  const wc    = (row[cols.wc]||'').trim();
+  const code  = (row[cols.mapcode]||'').trim();
+  const wrap  = h('div',{},[
+    h('div',{html:`<strong>${title}</strong>`}),
+    code ? h('div',{class:'mapcode'},[h('span',{html:'🚙 Map Code：'},[]), h('span',{id:'codeVal',html:code}), h('span',{class:'copy',title:'複製',html:'&nbsp;📋'})]) : null,
+    wc ? h('div',{class:'muted',html:`🚻 ${wc}`}) : null,
+    note ? h('div',{class:'muted',html:note}) : null,
+    url ? h('div',{html:`<a href="${url}" target="_blank">📍 Google 地圖</a>`}) : null
+  ]);
+  setTimeout(()=>{
+    const btn = wrap.querySelector('.copy');
+    if(btn){ btn.onclick = ()=>{ navigator.clipboard.writeText(code); btn.textContent=' ✅'; setTimeout(()=>btn.textContent=' 📋',1200);} }
+  },0);
+  return wrap;
+}
+
+function addMarker(row, latlng, cols){
+  const title = (row[cols.name]||'').trim();
+  const marker = L.circleMarker(latlng, {radius:10, color:'#60a5fa', weight:3, fillColor:'#1d4ed8', fillOpacity:.7});
+  marker.bindPopup(createPopup(row, cols));
+  marker.on('click', ()=>showPhotosFor(title));
+  return marker;
+}
+
+function showPhotosFor(place){
+  const box = document.getElementById('photos'); box.innerHTML='';
+  const items = gPhotos.filter(p=>p.place===place).flatMap(p=>p.files);
+  lbList = items.map(fn=>`assets/img/${fn}`);
+  if(items.length===0){ box.innerHTML = '<div class="muted">此景點目前沒有上傳相片。</div>'; return; }
+  items.forEach((fn,idx)=>{
+    const img = document.createElement('img');
+    img.src = `assets/img/${fn}`; img.alt = place; img.loading='lazy';
+    img.onclick = ()=>openLB(idx);
+    box.appendChild(img);
+  });
+}
+
+// globals
+let gPhotos = [];
+
+async function main(){
+  try{
+    const [tlRes, photosRes, override] = await Promise.all([
+      loadCSV(FILE_TIMELINE), loadCSV(FILE_PHOTOS), loadJSON(FILE_OVERRIDE)
+    ]);
+
+    // 兼容不同欄位名稱
+    const tlHeader = tlRes.meta.fields || [];
+    const cols = getTimelineColumns(tlHeader);
+    const rows = tlRes.data || [];
+
+    const phHeader = photosRes.meta.fields || [];
+    const {placeKey, filesKey} = getPhotosColumns(phHeader);
+    gPhotos = (photosRes.data||[]).map(r=>({
+      place: (r[placeKey]||'').trim(),
+      files: ((r[filesKey]||'')+'').split('|').map(s=>s.trim()).filter(Boolean)
+    }));
+
+    // 生成點位
+    const points = [];
+    rows.forEach(r=>{
+      const title = (r[cols.name]||'').trim();
+      if(!title) return;
+      let latlng = null;
+      if(override && override[title]) latlng = override[title];
+      if(!latlng) latlng = parseLatLngFromUrl(r[cols.link]||'');
+      if(!latlng && DEFAULT_COORDS[title]) latlng = DEFAULT_COORDS[title];
+      points.push({
+        title, lat: latlng?latlng[0]:null, lng: latlng?latlng[1]:null,
+        optional: isOptional(r), hasWC: !!(r[cols.wc]||'').trim(),
+        sortKey: (r[cols.start]||'') ? parseInt((r[cols.start]||'').split(':')[0])*60 + parseInt((r[cols.start]||'').split(':')[1]||'0') : 0,
+        raw:r
+      });
+    });
+
+    // 畫標記
+    points.forEach(p=>{
+      if(p.lat==null || p.lng==null) return;
+      const mk = addMarker(p.raw, [p.lat,p.lng], cols);
+      (p.optional?grpOpt:grpMain).addLayer(mk);
+      if(p.hasWC) grpWC.addLayer(L.circleMarker([p.lat,p.lng],{radius:6,color:'#22c55e',weight:2,fillOpacity:.5}).bindPopup('🚻 '+p.title));
+    });
+
+    // 主路線（排除可有可無）
+    const routePts = points.filter(p=>p.lat!=null && p.lng!=null && !p.optional).sort((a,b)=>a.sortKey-b.sortKey);
+    if(polyRoute) map.removeLayer(polyRoute);
+    if(routePts.length>=2){
+      polyRoute = L.polyline(routePts.map(p=>[p.lat,p.lng]), {color:'#60a5fa', weight:4, opacity:.9}).addTo(map);
+    }
+
+    // 視野
+    let bounds = null;
+    try{ bounds = L.featureGroup([grpMain, grpOpt]).getBounds(); }catch(e){}
+    if(bounds && bounds.isValid()) map.fitBounds(bounds.pad(0.15));
+    else map.setView(DEFAULT_COORDS['澀谷出發（包車）']||[35.659,139.700], 12);
+
+    // 時間軸
+    const tbody = document.getElementById('tbody'); tbody.innerHTML='';
+    rows.forEach(r=>{
+      const t1 = (r[cols.start]||'').trim(), t2 = (r[cols.end]||'').trim();
+      const title = (r[cols.name]||'').trim();
+      const note  = (r[cols.note]||'').trim();
+      const cat   = (r[cols.cat]||'').trim();
+      const code  = (r[cols.mapcode]||'').trim();
+      const link  = (r[cols.link]||'').trim();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="nowrap">${t1}${t2?('-'+t2):''}</td>
+        <td>${title}${link?`　<a href="${link}" target="_blank">📍 Google 地圖</a>`:''}</td>
+        <td>${note||''}</td>
+        <td class="nowrap">${cat||''}</td>
+        <td>${code?`<span class="mapcode">🚙 ${code}<span class="copy" title="複製"> 📋</span></span>`:''}</td>`;
+      tbody.appendChild(tr);
+      const cp = tr.querySelector('.copy');
+      if(cp){ cp.addEventListener('click',()=>{ navigator.clipboard.writeText(code); cp.textContent=' ✅'; setTimeout(()=>cp.textContent=' 📋',1200); }); }
+    });
+
+    // 互動
+    document.getElementById('toggleFS').addEventListener('click', ()=>{
+      const el = document.getElementById('map');
+      el.style.height = (el.style.height==='86vh') ? '60vh' : '86vh';
+      setTimeout(()=>map.invalidateSize(), 200);
+    });
+    document.getElementById('toggleT').addEventListener('click', ()=>{
+      const t = document.getElementById('timeline');
+      t.style.display = (t.style.display==='none') ? '' : 'none';
+    });
+
+    syncLayers();
+  }catch(err){
+    console.error(err);
+    alert('載入資料時發生錯誤，請確認三個檔案是否與本頁同層，且為 UTF-8 編碼。');
+  }
+}
+
+main();
+</script>
+</body>
+</html>
