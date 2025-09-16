@@ -1,394 +1,82 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>2025 東京近郊旅</title>
-<link rel="preconnect" href="https://unpkg.com" crossorigin>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-:root{
-  --bg:#0f172a;            /* 背景 */
-  --panel:#111827;         /* 面板 */
-  --muted:#9ca3af;         /* 次字色 */
-  --text:#e5e7eb;          /* 主字色 */
-  --accent:#3b82f6;        /* 藍 */
-  --chip-bg:#ffedd5;       /* 很淺的橘底 */
-  --chip:#b45309;          /* 深橘字 */
-  --ok:#22c55e;
-  --warning:#f59e0b;
-  --danger:#ef4444;
-  --border:#1f2937;
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans TC","Noto Sans",Arial;}
-a{color:#93c5fd;text-decoration:none}
-a:hover{text-decoration:underline}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2025 東京近郊旅</title>
+  <style>
+    body { background:#0b1220; color:#e5e7eb; font-family:sans-serif; margin:0; padding:20px; }
+    h1 { font-size:1.4em; margin-bottom:10px; }
 
-.wrapper{max-width:980px;margin:0 auto;padding:16px 14px 80px;position:relative;z-index:1}
-.header{position:sticky;top:0;z-index:1000;background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(15,23,42,.9));backdrop-filter:blur(6px);padding:8px 14px 14px;margin:0 -14px 8px}
-.title{font-size:28px;font-weight:800;letter-spacing:.5px}
-.breadcrumb{color:var(--muted);margin-top:4px;font-size:16px}
-.tabs{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
-.tab{padding:14px 24px;border-radius:999px;background:#0b1220;border:2px solid #24304a;color:#cbd5e1;cursor:pointer}
-.tab.active{outline:3px solid #27477d;background:#0e1a2d;color:#fff}
+    /* 日期按鈕 */
+    .date-btns { display:flex; gap:10px; margin-bottom:20px; }
+    .date-btn {
+      background:#111827; color:#e5e7eb;
+      border-radius:20px; padding:8px 14px;
+      border:1px solid #1f2937;
+      text-align:center;
+    }
+    .date-btn strong { display:block; font-size:14px; }
+    .date-btn small { display:block; font-size:11px; opacity:0.8; }
 
-.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin:14px 0}
+    /* 表格 */
+    .tl { width:100%; border-collapse:separate; border-spacing:0 10px; }
+    .tl th, .tl td { padding:12px 14px; background:#0f172a; color:#e5e7eb; }
+    .tl th { position:sticky; top:0; z-index:1; background:#0b1220; }
 
-.map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap}
-.map-title{font-weight:700}
-.btn{border:1px solid #2b3446;background:#0c1220;color:#dbeafe;border-radius:12px;padding:8px 14px;cursor:pointer}
-.btn:hover{background:#10192c}
-.btn.small{padding:6px 10px;border-radius:10px;font-size:13px}
+    .tl tr.data-row td:first-child { border-radius:12px 0 0 0; }
+    .tl tr.data-row td:last-child { border-radius:0 12px 0 0; }
 
-.map-wrap{position:relative}
-#map{height:60vh;border-radius:12px;border:1px solid var(--border);overflow:hidden;z-index:1}
-.leaflet-control-container .layer-toggle{display:flex;flex-direction:column;gap:8px}
-.layer-panel{position:absolute;right:12px;top:12px;background:rgba(10,17,29,.88);backdrop-filter:blur(6px);border:1px solid #253041;border-radius:12px;padding:10px 12px;z-index:5}
-.layer-panel label{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;user-select:none}
-.layer-panel input{width:18px;height:18px}
+    .tl tr.note-row td { background:#0a0f1d; border-top:1px solid #1f2a44; }
+    .tl td.note-label {
+      width:64px; color:#cbd5e1; font-weight:700; text-align:center;
+      background:#0a0f1d; white-space:nowrap;
+    }
+    .tl td.note-text { color:#cbd5e1; line-height:1.6; }
+    .tl tr.note-row td:last-child { border-radius:0 0 12px 12px; }
 
-.locate-stack{position:absolute;right:12px;top:140px;display:flex;flex-direction:column;gap:10px;z-index:6}
-.locbtn{display:flex;align-items:center;gap:8px;border:1px solid #253041;background:#0c1220;color:#dbeafe;border-radius:12px;padding:8px 12px;cursor:pointer}
-.locbtn:hover{background:#111a2a}
-
-.popup-title{font-weight:800;font-size:18px;color:#0f172a;margin-bottom:6px}
-.popup-line{display:flex;align-items:center;gap:10px;margin:8px 0 10px}
-.badge{display:inline-flex;align-items:center;gap:8px;background:var(--chip-bg);color:var(--chip);border-radius:999px;padding:6px 10px;font-weight:700}
-.badge .copy{background:transparent;border:none;cursor:pointer}
-.popup-text{color:#334155;line-height:1.6}
-.popup-link{display:inline-flex;align-items:center;gap:6px;margin-top:6px}
-
-.photos{min-height:80px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media(min-width:820px){.photos{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.photo{height:120px;background:#0b1220;border:1px solid #223047;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.photo img{width:100%;height:100%;object-fit:cover;}
-
-.timeline-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
-table{border-collapse:separate;border-spacing:0;width:100%;min-width:800px;background:#0d1423}
-thead th{position:sticky;top:108px;background:#0e1526;z-index:20}
-@media(min-width:820px){thead th{top:110px}}
-th,td{padding:14px;border-bottom:1px solid #1a2336;vertical-align:top}
-th{color:#cbd5e1;text-align:left;font-weight:700}
-td{color:#e5e7eb}
-.timecell div{line-height:1.2}
-.note-row td{background:#0b1220;border-top:0;border-bottom:1px solid #1a2336}
-.note-label{color:#9ca3af;width:80px}
-.code-chip{display:inline-flex;align-items:center;gap:8px;background:var(--chip-bg);color:var(--chip);border:1px solid #f8d6b3;padding:8px 12px;border-radius:999px;font-weight:800;white-space:nowrap}
-.code-chip button{border:0;background:transparent;cursor:pointer}
-
-.sticky-spacer{height:4px}
-.hidden{display:none}
-</style>
+    .mapcode {
+      display:inline-flex; align-items:center; gap:10px;
+      padding:6px 12px; border-radius:999px; background:#111827; color:#fca76a;
+      box-shadow:inset 0 0 0 1px #22304d;
+    }
+  </style>
 </head>
 <body>
-<div class="header">
-  <div class="wrapper">
-    <div class="title">2025 東京近郊旅</div>
-    <div class="breadcrumb">澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</div>
-    <div class="tabs" id="dateTabs">
-      <button class="tab active">9/20 鎌倉</button>
-      <button class="tab">9/21</button>
-      <button class="tab">9/22</button>
-      <button class="tab">9/23</button>
-    </div>
-  </div>
-</div>
-
-<div class="wrapper">
-
-  <div class="section">
-    <div class="map-head">
-      <div class="map-title">互動地圖（點圖標看資訊 / 點任一標記顯示相簿）</div>
-      <button class="btn small" id="fullscreenBtn">全螢幕地圖</button>
-    </div>
-    <div class="map-wrap">
-      <div id="map"></div>
-      <div class="layer-panel" id="layerPanel">
-        <label><input type="checkbox" id="layerMain" checked>主行程</label>
-        <label><input type="checkbox" id="layerOptional" checked>可有可無</label>
-        <label><input type="checkbox" id="layerToilet" checked>廁所</label>
-      </div>
-      <div class="locate-stack">
-        <button class="locbtn" id="btnLocate">📍 我在這</button>
-        <button class="locbtn" id="btnFollow">🛰️ 跟隨我</button>
-      </div>
-    </div>
+  <h1>2025 東京近郊旅</h1>
+  <div class="date-btns">
+    <div class="date-btn"><strong>09/20</strong><small>鎌倉</small></div>
+    <div class="date-btn"><strong>09/21</strong><small>箱根</small></div>
+    <div class="date-btn"><strong>09/22</strong><small>熱海</small></div>
+    <div class="date-btn"><strong>09/23</strong><small>河口湖</small></div>
   </div>
 
-  <div class="section">
-    <div class="map-head">
-      <div class="map-title">照片牆（點任一標記顯示相簿）</div>
-    </div>
-    <div id="photos" class="photos"><div class="photo" style="grid-column:1/-1;display:flex;justify-content:flex-start;padding:12px;">暫無照片</div></div>
-  </div>
-
-  <div class="section">
-    <div class="timeline-head">
-      <div class="map-title">時間軸（9/20 +15 分鐘緩衝版）</div>
-      <button class="btn small" id="toggleT">展開 / 收合</button>
-    </div>
-    <div style="color:var(--muted);font-size:12px;margin:-6px 0 8px;">
-      本頁讀取：<code>timeline-2025-09-20_v6.csv</code>、<code>photos-2025-09-20-mapped.csv</code>、<code>coords-override-2025-09-20.json</code>
-    </div>
-    <div class="table-wrap" id="tableWrap">
-      <table id="timeline">
-        <thead>
-          <tr>
-            <th style="width:90px">時間</th>
-            <th style="min-width:220px">地點 / 活動</th>
-            <th style="min-width:220px">備註</th>
-            <th style="width:90px">類別</th>
-            <th style="width:140px">車Map Code</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-// ---- 工具 ----
-const $ = (sel,root=document)=>root.querySelector(sel);
-const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
-
-// CSV 解析（支援引號）
-function parseCSV(text){
-  const rows=[]; let row=[], cur='', inQ=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i], n=text[i+1];
-    if(c=='"'){
-      if(inQ && n=='"'){ cur+='"'; i++; }
-      else inQ=!inQ;
-    } else if(c==',' && !inQ){ row.push(cur); cur=''; }
-    else if((c=='\\n' || c=='\\r') && !inQ){
-      if(c=='\\r' && n=='\\n'){ i++; }
-      row.push(cur); rows.push(row); row=[]; cur='';
-    } else cur+=c;
-  }
-  if(cur.length || row.length) { row.push(cur); rows.push(row); }
-  // 去 BOM 的 header
-  if(rows.length && rows[0][0].charCodeAt(0)===65279){ rows[0][0]=rows[0][0].slice(1); }
-  const header=rows.shift();
-  return rows.filter(r=>r.some(v=>v.trim()!=='')).map(r=>Object.fromEntries(header.map((h,i)=>[h.trim(), (r[i]??'').trim()])));
-}
-
-// fetch 三份資料
-async function loadAll(){
-  const [csvT, csvP, jCoords] = await Promise.all([
-    fetch('timeline-2025-09-20_v6.csv').then(r=>r.text()),
-    fetch('photos-2025-09-20-mapped.csv').then(r=>r.text()),
-    fetch('coords-override-2025-09-20.json').then(r=>r.json())
-  ]);
-  const timeline = parseCSV(csvT);
-  const photos = parseCSV(csvP);
-  const coords = jCoords;
-
-  // 轉相簿：name -> [imgs]
-  const photoMap = {};
-  photos.forEach(row=>{
-    const name = (row['地點 / 活動']||row['name']||'').trim();
-    const imgs = Object.values(row).slice(1).map(v=>v.trim()).filter(v=>v);
-    if(name && imgs.length) photoMap[name]=imgs;
-  });
-  return {timeline, photoMap, coords};
-}
-
-// Leaflet 初始化
-const map = L.map('map',{zoomControl:false, attributionControl:true}).setView([35.324,139.53], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution:'&copy; OpenStreetMap'
-}).addTo(map);
-L.control.zoom({position:'topleft'}).addTo(map);
-
-// 三個圖層
-const layerMain = L.layerGroup().addTo(map);
-const layerOptional = L.layerGroup().addTo(map);
-const layerToilet = L.layerGroup().addTo(map);
-let routeLine = null;
-let followWatchId = null;
-
-// UI 控制
-$('#layerMain').addEventListener('change', e=>{
-  if(e.target.checked) map.addLayer(layerMain); else map.removeLayer(layerMain);
-  if(routeLine){ e.target.checked ? map.addLayer(routeLine) : map.removeLayer(routeLine); }
-});
-$('#layerOptional').addEventListener('change', e=>{
-  if(e.target.checked) map.addLayer(layerOptional); else map.removeLayer(layerOptional);
-});
-$('#layerToilet').addEventListener('change', e=>{
-  if(e.target.checked) map.addLayer(layerToilet); else map.removeLayer(layerToilet);
-});
-
-$('#fullscreenBtn').addEventListener('click', ()=>{
-  const el = $('#map');
-  const full = el.dataset.full === '1';
-  if(full){
-    el.style.height='60vh';
-    el.dataset.full='0';
-    $('#fullscreenBtn').textContent='全螢幕地圖';
-  }else{
-    el.style.height='86vh';
-    el.dataset.full='1';
-    $('#fullscreenBtn').textContent='還原地圖';
-  }
-  setTimeout(()=>map.invalidateSize(), 250);
-});
-
-// 定位
-$('#btnLocate').addEventListener('click', ()=>{
-  if(!navigator.geolocation){ alert('這個裝置不支援定位'); return; }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const latlng=[pos.coords.latitude,pos.coords.longitude];
-    L.marker(latlng,{title:'我在這'}).addTo(map);
-    map.flyTo(latlng, 14, {duration:0.8});
-  }, err=>alert('定位失敗：'+err.message));
-});
-$('#btnFollow').addEventListener('click', (ev)=>{
-  if(followWatchId){
-    navigator.geolocation.clearWatch(followWatchId);
-    followWatchId=null;
-    ev.target.textContent='🛰️ 跟隨我';
-    return;
-  }
-  if(!navigator.geolocation){ alert('這個裝置不支援定位'); return; }
-  followWatchId = navigator.geolocation.watchPosition(pos=>{
-    const latlng=[pos.coords.latitude,pos.coords.longitude];
-    L.circleMarker(latlng,{radius:6,color:'#60a5fa'}).addTo(map);
-    map.panTo(latlng);
-  }, err=>alert('定位失敗：'+err.message), {enableHighAccuracy:true, maximumAge:1000});
-  ev.target.textContent='🛰️ 追蹤中（再按關閉）';
-});
-
-// 生成內容
-function twTime(hm){ // 09:00 -> 9:00
-  return hm.replace(/^0/,'').replace(/:00$/,':00');
-}
-
-function makePopupHTML(row){
-  const title = (row['地點 / 活動']||'').trim();
-  const note = (row['備註']||'').trim().replace(/\\n/g,'<br>');
-  const code = (row['🚙車Map Code']||row['車Map Code']||'').trim();
-  const g = (row['📍 景點連結']||'').trim();
-  return `
-  <div class="popup-title">${title}</div>
-  <div class="popup-line">
-    ${code?`<span class="badge">🚗 ${code}<button class="copy" title="複製" onclick="navigator.clipboard.writeText('${code}');">📋</button></span>`:''}
-  </div>
-  ${note?`<div class="popup-text">${note}</div>`:''}
-  ${g?`<div class="popup-link">📍 <a target="_blank" href="${g}">Google 地圖</a></div>`:''}
-  `;
-}
-
-function addRow(tbody,row){
-  const tr=document.createElement('tr');
-  // 時間兩行
-  const s = (row['時間起']||'').trim();
-  const e = (row['時間迄']||'').trim();
-  const timeHTML = `<div class="timecell"><div>${s}</div><div>${e}</div></div>`;
-  tr.innerHTML = `
-    <td>${timeHTML}</td>
-    <td><div style="font-weight:800">${(row['地點 / 活動']||'').trim()}</div>
-        ${(row['📍 景點連結']||'').trim()?`<div><a target="_blank" href="${row['📍 景點連結'].trim()}">📍 Google 地圖</a></div>`:''}
-    </td>
-    <td></td>
-    <td>${(row['類別']||'').trim()}</td>
-    <td>${(row['🚙車Map Code']||row['車Map Code']||'').trim()?`<span class="code-chip">🚗 ${(row['🚙車Map Code']||row['車Map Code']).trim()} <button title="複製" onclick="navigator.clipboard.writeText('${(row['🚙車Map Code']||row['車Map Code']).trim()}')">📋</button></span>`:''}</td>
-  `;
-  tbody.appendChild(tr);
-  // 備註獨立橫列
-  const note = (row['備註']||'').trim();
-  if(note){
-    const tr2=document.createElement('tr');
-    tr2.className='note-row';
-    tr2.innerHTML=`<td class="note-label">備註</td><td colspan="4" class="note-text">${note.replace(/\\n/g,'<br>')}</td>`;
-    tbody.appendChild(tr2);
-  }
-}
-
-function ensurePhotosWall(images){
-  const wall = $('#photos');
-  wall.innerHTML='';
-  if(!images || !images.length){
-    wall.innerHTML='<div class="photo" style="grid-column:1/-1;display:flex;justify-content:flex-start;padding:12px;">暫無照片</div>';
-    return;
-  }
-  images.forEach(src=>{
-    const d=document.createElement('div');
-    d.className='photo';
-    const img=new Image();
-    img.src=src; img.loading='lazy';
-    img.onerror=()=>{d.textContent='載入失敗';};
-    d.appendChild(img);
-    wall.appendChild(d);
-  });
-}
-
-async function main(){
-  const {timeline, photoMap, coords} = await loadAll();
-
-  // 標記 & 路線
-  const seen=new Set();
-  const routePoints=[];
-
-  for(const row of timeline){
-    const name=(row['地點 / 活動']||'').trim();
-    if(!name) continue;
-    const cat=(row['類別']||'').trim();
-    const latlng = coords[name];
-    if(latlng){
-      if(!seen.has(name)){
-        const marker = L.marker(latlng);
-        marker.bindPopup(makePopupHTML(row));
-        marker.on('click',()=>{
-          // 照片
-          const imgs = photoMap[name] || photoMap[name.replace(/\\s/g,'')] || [];
-          ensurePhotosWall(imgs);
-        });
-        if(cat==='可有可無') marker.addTo(layerOptional);
-        else if(cat==='廁所') marker.addTo(layerToilet);
-        else marker.addTo(layerMain);
-        seen.add(name);
-      }
-      if(cat!=='可有可無') routePoints.push(latlng);
-    }
-  }
-
-  if(routePoints.length>=2){
-    routeLine = L.polyline(routePoints,{color:'#60a5fa',weight:4,opacity:.8}).addTo(layerMain);
-    map.fitBounds(L.latLngBounds(routePoints),{padding:[30,30]});
-  }
-
-  // 時間軸
-  const tb = $('#timeline tbody');
-  tb.innerHTML='';
-  timeline.forEach(r=>addRow(tb,r));
-
-  // 讓地圖在 sticky header 下，不覆蓋
-  // (header 已有 z-index:1000，地圖保持預設 z-index 即可)
-}
-main().catch(err=>{
-  console.error(err);
-  alert('載入資料發生錯誤：'+err.message);
-});
-
-// 展開/收合（其實是單純切換 .table-wrap 高度，自動捲動）
-$('#toggleT').addEventListener('click',()=>{
-  const wrap=$('#tableWrap');
-  if(wrap.style.maxHeight){
-    wrap.style.maxHeight='';
-  }else{
-    wrap.style.maxHeight='40vh';
-    wrap.style.overflowY='auto';
-  }
-});
-</script>
+  <table class="tl">
+    <thead>
+      <tr>
+        <th>時間</th><th>地點 / 活動</th><th>類別</th><th>車Map Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="data-row">
+        <td>6:30<br>8:00</td>
+        <td><div style="font-weight:700">澀谷出發</div><a href="#">📍 Google 地圖</a></td>
+        <td>包車</td>
+        <td><span class="mapcode">🚗 579 223*51 📋</span></td>
+      </tr>
+      <tr class="note-row">
+        <td></td><td class="note-label">備註</td><td class="note-text" colspan="2">預留 1.5 小時車程（含早高峰小堵車）</td>
+      </tr>
+      <tr class="data-row">
+        <td>8:00<br>8:10</td>
+        <td><div style="font-weight:700">7-11 鎌倉七里ガ浜店</div><a href="#">📍 Google 地圖</a></td>
+        <td>休息</td>
+        <td><span class="mapcode">🚗 8 181 231*33 📋</span></td>
+      </tr>
+      <tr class="note-row">
+        <td></td><td class="note-label">備註</td><td class="note-text" colspan="2">上廁所</td>
+      </tr>
+    </tbody>
+  </table>
 </body>
 </html>
