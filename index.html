@@ -1,296 +1,311 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>2025 東京近郊旅 | 澀谷→鎌倉→箱根→熱海→伊豆半島</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>2025 互動地圖＋照片＋時間軸（v88）</title>
+<link rel="preconnect" href="https://unpkg.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
-:root{
-  --bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#a1a1aa;--chip:#0b1220;--chip-b:#334155;
-  --stickTop: 96px; /* 會在載入時計算覆寫，讓表頭停在日期按鈕下 */
-}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,"Noto Sans TC","PingFang TC",Arial}
-a{color:#93c5fd;text-decoration:none}a:hover{text-decoration:underline}
-.topbar{position:sticky;top:0;z-index:900;background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(15,23,42,.7) 70%,transparent);backdrop-filter:blur(6px)}
-.wrap{max-width:1100px;margin:auto;padding:14px 14px 0}
-.title{font-weight:700;font-size:18px;white-space:nowrap;overflow:auto;scrollbar-width:none}
-.tabs{display:flex;gap:10px;margin:10px 0 8px;overflow:auto;scrollbar-width:none}
-.tab{padding:8px 14px;border-radius:999px;background:#0b1220;border:1px solid #1f2937;color:#cbd5e1;cursor:pointer;white-space:nowrap}
-.tab.active{background:#1f2937;color:#fff;border-color:#3b82f6}
-
-.section{max-width:1100px;margin:10px auto;padding:12px;border-radius:14px;background:var(--panel);box-shadow:0 0 0 1px #0b1220}
-#map{height:60vh;border-radius:12px}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.btn{border:1px solid #334155;background:#0b1220;color:#e5e7eb;border-radius:10px;padding:8px 12px;cursor:pointer}
-.btn:hover{border-color:#475569}
-
-.float-panel{position:absolute;right:14px;top:14px;z-index:600;background:#0b1220cc;border:1px solid #334155;border-radius:12px;padding:10px 12px}
-.float-panel label{display:flex;align-items:center;gap:8px;margin:6px 0}
-.locate-box{position:absolute;right:14px;top:144px;z-index:600;display:flex;flex-direction:column;gap:8px}
-.leaflet-control-container .leaflet-top.leaflet-right{margin-top:60px}
-
-.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--chip-b);background:var(--chip);padding:4px 10px;border-radius:999px;font-weight:600}
-.copy{cursor:pointer;opacity:.85}.copy:hover{opacity:1}
-
-.photos h3{margin:4px 0 10px;font-size:16px;color:#cbd5e1}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-@media(min-width:820px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.ph{position:relative;background:#0b1220;border:1px solid #1f2937;border-radius:10px;overflow:hidden;min-height:120px;display:flex;align-items:center;justify-content:center}
-.ph img{width:100%;height:100%;object-fit:cover}
-.ph .cap{position:absolute;left:8px;bottom:6px;background:#0008;padding:2px 6px;border-radius:6px;font-size:12px}
-.empty{padding:18px;border:1px dashed #334155;border-radius:10px;color:#a1a1aa;background:#0b1220}
-
-.table{width:100%;border-collapse:separate;border-spacing:0 10px}
-.table th,.table td{padding:10px 12px;vertical-align:top}
-.table thead th{position:sticky;top:var(--stickTop);background:#0b1220;border-bottom:1px solid #1f2937;z-index:5}
-.row{background:#0b1220;border:1px solid #1f2937;border-radius:12px}
-.time{white-space:nowrap}
-.note{white-space:normal;line-height:1.45}
-.type,.mapcode{white-space:nowrap}
-.badge{display:inline-block;border:1px solid #334155;background:#0b1220;border-radius:999px;padding:6px 10px}
-.copybtn{cursor:pointer;margin-left:8px;opacity:.85}.copybtn:hover{opacity:1}
+  :root{
+    --bg:#0f172a; /* slate-900 */
+    --panel:#111827; /* gray-900 */
+    --card:#0b1220;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --accent:#60a5fa;
+    --pill:#1f2937;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  a{color:#93c5fd;text-decoration:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(15,23,42,.95));backdrop-filter:saturate(180%) blur(8px);padding:10px 0 8px}
+  h1{margin:0 0 10px;font-weight:800;font-size:clamp(20px,4.2vw,36px);letter-spacing:.5px}
+  .tabs{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px}
+  .tab{border-radius:999px;padding:10px 18px;background:#0b1220;color:#cbd5e1;border:2px solid #1f2937;box-shadow:inset 0 0 0 1px #0b1220}
+  .tab.active{background:#0b1628;color:#fff;border-color:#29538a;box-shadow:0 6px 18px rgba(96,165,250,.25), inset 0 0 0 1px #0b1c2e}
+  .toolbar{display:flex;gap:10px;align-items:center;margin:8px 0}
+  .btn{background:#0b1628;color:#dbeafe;border:1px solid #1e3a8a;border-radius:10px;padding:6px 12px}
+  .grid{display:grid;gap:12px}
+  .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;overflow:hidden}
+  /* MAP */
+  #map{height:62vh;min-height:380px}
+  .layer-box{position:absolute;right:10px;top:10px;background:rgba(17,24,39,.92);color:#e5e7eb;border:1px solid #374151;border-radius:12px;padding:10px 12px;z-index:401}
+  .layer-box label{display:flex;gap:8px;align-items:center;margin:6px 0}
+  .loc-box{position:absolute;right:10px;bottom:14px;display:flex;flex-direction:column;gap:10px;z-index:402}
+  .loc-btn{display:flex;align-items:center;gap:8px;border-radius:12px;background:#0b1628;color:#e5e7eb;border:1px solid #1e3a8a;padding:10px 12px}
+  .loc-btn .pin{filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .copy-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#0b1628;border:1px solid #1e3a8a;margin-left:6px}
+  .copy-pill small{color:#9ca3af}
+  .popup-title{font-size:18px;font-weight:800;margin-bottom:6px}
+  .popup-row{margin:4px 0;color:#cbd5e1}
+  .popup-row .g{color:#93c5fd}
+  /* Photos */
+  #photos{padding:14px}
+  .photos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .ph{aspect-ratio:4/3;background:#0b1220;border:1px solid #1f2937;border-radius:10px;overflow:hidden}
+  .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .empty{color:#9ca3af}
+  /* Timeline */
+  .tl-wrap{position:relative}
+  .tl-head{position:sticky;top:calc(78px + 52px); /* under sticky header & tabs */ z-index:10;background:var(--panel);border-bottom:1px solid #1f2937}
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  th,td{padding:14px 12px;vertical-align:top}
+  th{color:#cbd5e1;font-weight:800;text-align:left;background:#0b1628;border-bottom:1px solid #1e3a8a;position:relative}
+  tr + tr td{border-top:1px solid #1f2937}
+  .td-time{white-space:pre-line;width:84px}
+  .td-note{white-space:pre-line}
+  .mapcode{white-space:nowrap}
+  /* small */
+  @media (min-width:860px){
+    .grid{grid-template-columns:1.05fr .95fr}
+    #map{height:68vh}
+  }
 </style>
 </head>
 <body>
-
-<div class="topbar" id="topbar">
+<header>
   <div class="wrap">
-    <div class="title">2025 東京近郊旅 ｜ 澀谷→鎌倉→箱根→熱海→伊豆半島</div>
-    <div class="tabs" id="tabs">
-      <button class="tab active">9/20 鎌倉</button>
-      <button class="tab">9/21</button>
-      <button class="tab">9/22</button>
-      <button class="tab">9/23</button>
+    <h1>2025 東京近郊旅　|　澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆</h1>
+    <div class="tabs">
+      <span class="tab active">9/20 鎌倉</span>
+      <span class="tab">9/21</span>
+      <span class="tab">9/22</span>
+      <span class="tab">9/23</span>
     </div>
+    <div class="toolbar"><button id="btn-full" class="btn">全螢幕地圖</button></div>
   </div>
-</div>
+</header>
 
-<div class="section wrap">
-  <div class="btn-row"><button id="btnFull" class="btn">全螢幕地圖</button></div>
-  <div style="position:relative">
+<main class="wrap grid">
+  <!-- Map card -->
+  <section class="panel" style="position:relative">
     <div id="map"></div>
-
-    <div class="float-panel" id="layerBox">
-      <label><input type="checkbox" id="chkMain" checked> 主行程/精華或近似</label>
-      <label><input type="checkbox" id="chkOpt" checked> 可有可無</label>
-      <label><input type="checkbox" id="chkToil" checked> 廁所</label>
+    <div class="layer-box">
+      <label><input id="chk-main" type="checkbox" checked> 主行程/精華或近似</label>
+      <label><input id="chk-opt" type="checkbox" checked> 可有可無</label>
+      <label><input id="chk-wc" type="checkbox" checked> 廁所</label>
     </div>
-
-    <div class="locate-box">
-      <button class="btn" id="btnLocate">📍 我在這</button>
-      <button class="btn" id="btnFollow">🛰️ 跟隨我</button>
+    <div class="loc-box">
+      <button id="btn-locate" class="loc-btn"><span class="pin">📍</span>我在這</button>
+      <button id="btn-follow" class="loc-btn">🛰️ 跟隨我</button>
     </div>
-  </div>
-</div>
+  </section>
 
-<div class="section wrap photos">
-  <h3>照片牆（點任一標記顯示相簿）</h3>
-  <div id="photos" class="grid"></div>
-  <div id="photosEmpty" class="empty" style="display:none">暫無照片</div>
-</div>
+  <!-- Photos card -->
+  <section class="panel" id="photos">
+    <div style="padding:0 4px 6px;font-weight:800">照片牆（點任一標記顯示相簿）</div>
+    <div id="photosGrid" class="photos-grid"></div>
+    <div id="photosEmpty" class="empty" style="padding:6px 4px">暫無照片</div>
+  </section>
 
-<div class="section wrap">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 8px">
-    <div>時間軸（9/20 +15 分鐘緩衝版）</div>
-    <button class="btn" id="btnToggleTL">展開 / 收合</button>
-  </div>
-  <div id="tlBox">
-    <table class="table" id="tl"></table>
-  </div>
-</div>
+  <!-- Timeline card (full width below on mobile) -->
+  <section class="panel grid" style="grid-column:1/-1">
+    <div class="tl-wrap">
+      <div style="padding:14px 14px 0;font-weight:800">時間軸（9/20 +15 分鐘緩衝版）</div>
+      <div class="tl-head">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:90px">時間</th>
+              <th>地點／活動</th>
+              <th>備註</th>
+              <th style="width:84px">類別</th>
+              <th style="width:160px">車Map Code</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div style="max-height:70vh;overflow:auto">
+        <table id="tl">
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
 
-<div id="lb" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000">
-  <img id="lbImg" alt="" style="max-width:92vw;max-height:92vh;border-radius:8px"/>
-</div>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-const CSV_TIMELINE='timeline-2025-09-20_v6.csv';
-const CSV_PHOTOS='photos-2025-09-20-mapped.csv';
-const JSON_COORDS='coords-override-2025-09-20.json';
+const CSV_URL = 'timeline-2025-09-20_v6.csv';
+const PHOTOS_URL = 'photos-2025-09-20-mapped.csv';
+const COORDS_URL = 'coords-override-2025-09-20.json';
 
-const map=L.map('map',{zoomControl:true}).setView([35.32,139.53],11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+// Map init
+const map = L.map('map',{zoomControl:false}).setView([35.318,139.53], 11);
+L.control.zoom({position:'topleft'}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom: 19, attribution:'&copy; OpenStreetMap'
+}).addTo(map);
 
-const layerMain=L.layerGroup().addTo(map);
-const layerOpt =L.layerGroup().addTo(map);
-const layerTol =L.layerGroup().addTo(map);
-let routeLine=null;
-let COORDS={}, PHOTO_MAP={};
+// Groups
+const gMain = L.layerGroup().addTo(map);
+const gOpt = L.layerGroup().addTo(map);
+const gWC = L.layerGroup().addTo(map);
+let routeLine = null;
 
-function calcStickTop(){
-  const tb=document.getElementById('topbar');
-  const rect=tb.getBoundingClientRect();
-  // 元素的實際高度（含 padding），再加一點緩衝
-  const h=tb.offsetHeight;
-  document.documentElement.style.setProperty('--stickTop', (h+6)+'px');
+let coordsOverride = {};
+
+function fmtTimeRange(a,b){
+  // 將 "12:50" 和 "13:50" 以直式呈現
+  const t1 = (a||'').trim();
+  const t2 = (b||'').trim();
+  if(!t1 && !t2) return '';
+  return (t1?(t1):'') + (t2? '\\n' + t2 : '');
 }
-calcStickTop();
-window.addEventListener('resize',calcStickTop);
-
-const btnFull=document.getElementById('btnFull');
-let isFull=false;
-btnFull.onclick=()=>{const m=document.getElementById('map');isFull=!isFull;m.style.height=isFull?'86vh':'60vh';map.invalidateSize({animate:true});};
-
-function refreshLayerVisibility(){
-  document.getElementById('chkMain').checked?map.addLayer(layerMain):map.removeLayer(layerMain);
-  document.getElementById('chkOpt').checked ?map.addLayer(layerOpt ):map.removeLayer(layerOpt );
-  document.getElementById('chkToil').checked?map.addLayer(layerTol ):map.removeLayer(layerTol );
-  if(routeLine){
-    document.getElementById('chkMain').checked?map.addLayer(routeLine):map.removeLayer(routeLine);
+function makeIcon(color='#3b82f6'){
+  return L.divIcon({className:'pin-ic',html:`<div style="width:22px;height:22px;border-radius:50%;background:${color};border:3px solid #e5effe;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>`,iconSize:[22,22],iconAnchor:[11,22]});
+}
+async function loadJSON(url){
+  const res = await fetch(url); if(!res.ok) throw new Error('json err');
+  return await res.json();
+}
+function parseCSV(url){
+  return new Promise((resolve,reject)=>{
+    Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:res=>resolve(res.data),error:reject});
+  });
+}
+const photosByPlace = new Map();
+function renderPhotos(place){
+  const grid = document.getElementById('photosGrid');
+  const empty = document.getElementById('photosEmpty');
+  grid.innerHTML='';
+  const list = photosByPlace.get(place) || [];
+  if(!list.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  for(const it of list){
+    const a = document.createElement('a');
+    a.className='ph';
+    a.href = it.url || it.src || '#';
+    a.target = '_blank';
+    a.innerHTML = `<img loading="lazy" src="${it.thumb || it.src || it.url}" alt="">`;
+    grid.appendChild(a);
   }
 }
-['chkMain','chkOpt','chkToil'].forEach(id=>document.getElementById(id).addEventListener('change',refreshLayerVisibility));
 
-let myMarker=null, myCircle=null, watchId=null;
-function locateOnce(){
-  if(!navigator.geolocation) return alert('此瀏覽器不支援定位');
-  navigator.geolocation.getCurrentPosition((pos)=>{
-    const {latitude,longitude,accuracy}=pos.coords, latlng=[latitude,longitude];
-    myMarker?myMarker.setLatLng(latlng): myMarker=L.marker(latlng).addTo(map).bindTooltip('你在這');
-    myCircle?myCircle.setLatLng(latlng).setRadius(accuracy): myCircle=L.circle(latlng,{radius:accuracy,opacity:.6,fillOpacity:.08}).addTo(map);
-    map.flyTo(latlng,16,{duration:1.2});
-  },(e)=>alert('定位失敗：'+e.message),{enableHighAccuracy:true,timeout:10000,maximumAge:10000});
+function copy(text){
+  navigator.clipboard?.writeText(text).catch(()=>{});
 }
-function toggleFollow(){
-  if(!navigator.geolocation) return alert('此瀏覽器不支援定位');
-  if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;return;}
-  watchId=navigator.geolocation.watchPosition((pos)=>{
-    const {latitude,longitude,accuracy}=pos.coords, latlng=[latitude,longitude];
-    myMarker?myMarker.setLatLng(latlng): myMarker=L.marker(latlng).addTo(map).bindTooltip('你在這');
-    myCircle?myCircle.setLatLng(latlng).setRadius(accuracy): myCircle=L.circle(latlng,{radius:accuracy,opacity:.06,fillOpacity:.06}).addTo(map);
-    map.panTo(latlng,{animate:true});
-  },(e)=>{alert('定位失敗：'+e.message); if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
-}
-document.getElementById('btnLocate').addEventListener('click',locateOnce);
-document.getElementById('btnFollow').addEventListener('click',toggleFollow);
 
-function normalizeSrc(s){
-  if(!s) return '';
-  if(/^https?:\/\//i.test(s)) return s;
-  if(s.includes('/')) return s;            // 已帶路徑
-  return 'assets/img/'+s;                   // 只給檔名 -> 補 assets/img/
-}
-function popupHTML(rec){
-  const code=(rec['🚙車Map Code']||'').trim();
-  const note=(rec['備註']||'').trim();
-  const url =(rec['📍 景點連結']||'').trim();
-  return `
-    <div style="min-width:240px">
-      <div style="font-weight:800;font-size:18px;margin-bottom:6px">${rec['地點 / 活動']}</div>
-      ${code?`<div class="chip">🚗 ${code}<span class="copy" title="複製" onclick="navigator.clipboard.writeText('${code}')">📋</span></div>`:''}
-      ${note?`<div style="margin:8px 0 6px;color:#cbd5e1">${note}</div>`:''}
-      ${url?`<div>📍 <a href="${url}" target="_blank">Google 地圖</a></div>`:''}
-    </div>`;
-}
-function showPhotosFor(place){
-  const box=document.getElementById('photos'), emp=document.getElementById('photosEmpty');
-  box.innerHTML='';
-  const arr=PHOTO_MAP[place]||[];
-  if(!arr.length){emp.style.display='block';return;}
-  emp.style.display='none';
-  arr.forEach(p=>{
-    const el=document.createElement('div');el.className='ph';
-    const img=document.createElement('img');img.loading='lazy';img.src=normalizeSrc(p.src);img.alt=p.cap||place;
-    img.onclick=()=>{document.getElementById('lbImg').src=normalizeSrc(p.src);document.getElementById('lb').style.display='flex';};
-    const cap=document.createElement('div');cap.className='cap';cap.textContent=p.cap||'';
-    el.appendChild(img);el.appendChild(cap);box.appendChild(el);
-  });
-}
-document.getElementById('lb').addEventListener('click',()=>document.getElementById('lb').style.display='none');
-window.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('lb').style.display='none';});
+// Build
+(async()=>{
+  try{
+    coordsOverride = await loadJSON(COORDS_URL);
+  }catch(e){ console.warn('coords json not found',e); }
 
-async function loadAll(){
-  COORDS=await fetch(JSON_COORDS).then(r=>r.json());
+  // Photos
+  try{
+    const ph = await parseCSV(PHOTOS_URL);
+    ph.forEach(row=>{
+      const key = (row['地點']||row['place']||'').trim();
+      if(!key) return;
+      if(!photosByPlace.has(key)) photosByPlace.set(key,[]);
+      photosByPlace.get(key).push({
+        src: row['src']||row['url']||row['img'],
+        url: row['url']||row['src']
+      });
+    });
+  }catch(e){ console.warn('photos csv not found',e); }
 
-  await new Promise(res=>{
-    Papa.parse(CSV_PHOTOS,{download:true,header:true,skipEmptyLines:true,complete:(r)=>{
-      r.data.forEach(row=>{
-        const place=(row.place||row['place']||row['地點']||row['地點 / 活動']||'').trim();
-        const src  =(row.img||row['img']||row['src']||row['檔名']||'').trim();
-        const cap  =(row.caption||row['caption']||row['說明']||row['備註']||'').trim();
-        if(!place||!src) return;
-        (PHOTO_MAP[place]||(PHOTO_MAP[place]=[])).push({src,cap});
-      }); res();
-    }});
-  });
+  // Timeline + markers
+  const rows = await parseCSV(CSV_URL);
+  const mainRouteLatLngs = [];
+  rows.forEach((r,idx)=>{
+    const start = r['時間起']||r['start'];
+    const end   = r['時間迄']||r['end'];
+    const place = (r['地點 / 活動']||r['place']||'').trim();
+    const note  = (r['備註']||'').trim();
+    const typ   = (r['類別']||'').trim();
+    const gmap  = r['📍 景點連結']||r['gmap']||'';
+    const wc    = r['🚻 廁所']||'';
+    const mapcode = r['🚙車Map Code']||r['mapcode']||'';
 
-  await new Promise(res=>{
-    Papa.parse(CSV_TIMELINE,{download:true,header:true,skipEmptyLines:true,complete:(r)=>{build(r.data);res();}});
-  });
-}
-function twoLineTime(s,e){
-  const a=(s||'').trim(), b=(e||'').trim();
-  if(a&&b) return `<div>${a}–</div><div>${b}</div>`;
-  return a||b||'';
-}
-function build(rows){
-  const tl=document.getElementById('tl');
-  tl.innerHTML=`
-    <thead>
-      <tr>
-        <th style="width:90px">時間</th>
-        <th style="min-width:180px">地點 / 活動</th>
-        <th>備註</th>
-        <th style="width:72px">類別</th>
-        <th style="width:160px">車Map Code</th>
-      </tr>
-    </thead>
-    <tbody id="tb"></tbody>`;
-  const tb=document.getElementById('tb');
-  const ptsMain=[];
-  rows.forEach(rec=>{
-    const name=(rec['地點 / 活動']||'').trim(); if(!name) return;
-    const type=(rec['類別']||'').trim();
-    const note=(rec['備註']||'').trim();
-    const url =(rec['📍 景點連結']||'').trim();
-    const code=(rec['🚙車Map Code']||'').trim();
-    const toilet=(rec['🚻 廁所']||'').trim();
-
-    const coord=COORDS[name];
-    if(coord){
-      const latlng=[coord[0],coord[1]];
-      const mk=L.marker(latlng,{title:name}).bindPopup(popupHTML(rec)).on('click',()=>showPhotosFor(name));
-      if(type==='可有可無'){ mk.addTo(layerOpt); }
-      else if(toilet){ mk.addTo(layerTol); }
-      else { mk.addTo(layerMain); ptsMain.push(latlng); }
+    // coords
+    let latlng = null;
+    if (coordsOverride[place]){
+      latlng = coordsOverride[place];
     }
 
-    const tr=document.createElement('tr');tr.className='row';
-    tr.innerHTML=`
-      <td class="time">${twoLineTime(rec['時間起'],rec['時間迄'])}</td>
-      <td>
-        <div style="font-weight:700">${name}</div>
-        ${url?`<div>📍 <a href="${url}" target="_blank">Google 地圖</a></div>`:''}
-      </td>
-      <td class="note">${note||''}</td>
-      <td class="type">${type||''}</td>
-      <td class="mapcode">${code?`<span class="badge">🚗 ${code}<span class="copybtn" title="複製" onclick="navigator.clipboard.writeText('${code}')">📋</span></span>`:''}</td>`;
-    tb.appendChild(tr);
+    // Marker + popup
+    if(latlng){
+      const isWC = (wc && wc!=='無' && wc!=='') ? true : false;
+      const isOpt = (typ==='可有可無');
+      const color = isWC ? '#10b981' : (isOpt? '#a78bfa' : '#3b82f6');
+      const marker = L.marker(latlng,{icon:makeIcon(color)}).bindPopup(()=>{
+        const pill = mapcode? `<span class="copy-pill" onclick="navigator.clipboard.writeText('${mapcode}')">🚘 ${mapcode} <small>複製</small></span>`:'';
+        const g = gmap? `<a class="g" href="${gmap}" target="_blank">Google 地圖</a>`:'';
+        const n = note? `<div class="popup-row">${note}</div>`:'';
+        setTimeout(()=>renderPhotos(place),0);
+        return `<div class="popup"><div class="popup-title">${place}</div>
+          ${mapcode?`<div class="popup-row">${pill}</div>`:''}
+          ${g?`<div class="popup-row">📍 ${g}</div>`:''}
+          ${n}</div>`;
+      });
+      (isWC? gWC : (isOpt? gOpt : gMain)).addLayer(marker);
+      if(!isOpt) mainRouteLatLngs.push(latlng);
+    }
+
+    // timeline row
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="td-time">${fmtTimeRange(start,end)}</td>
+      <td>${place}${gmap?`<div>📍 <a href="${gmap}" target="_blank">Google 地圖</a></div>`:''}</td>
+      <td class="td-note">${note}</td>
+      <td>${typ||''}</td>
+      <td class="mapcode">${mapcode?`🚘 ${mapcode} <button onclick="navigator.clipboard.writeText('${mapcode}')">📋</button>`:''}</td>`;
+    document.querySelector('#tl tbody').appendChild(tr);
   });
 
+  // Route line (only main)
   if(routeLine) map.removeLayer(routeLine);
-  if(ptsMain.length>=2){
-    routeLine=L.polyline(ptsMain,{color:'#60a5fa',weight:5,opacity:.85}).addTo(map);
-    map.fitBounds(routeLine.getBounds(),{padding:[20,20]});
-  }else{
-    const all=L.featureGroup([layerMain,layerOpt,layerTol]);
-    try{ map.fitBounds(all.getBounds(),{padding:[20,20]}); }catch(e){}
+  if(mainRouteLatLngs.length>1){
+    routeLine = L.polyline(mainRouteLatLngs,{color:'#5ea5ff',weight:5,opacity:.9}).addTo(map);
+    map.fitBounds(routeLine.getBounds().pad(0.15));
   }
-  refreshLayerVisibility();
 
-  // 起始顯示：有相片的第一個點
-  const firstWithPhoto=rows.find(r=>PHOTO_MAP[(r['地點 / 活動']||'').trim()]);
-  if(firstWithPhoto) showPhotosFor((firstWithPhoto['地點 / 活動']||'').trim());
-  else{ document.getElementById('photos').innerHTML=''; document.getElementById('photosEmpty').style.display='block'; }
-}
+  // layers toggles
+  document.getElementById('chk-main').addEventListener('change',e=>{
+    if(e.target.checked){ map.addLayer(gMain); if(routeLine) map.addLayer(routeLine); }
+    else{ map.removeLayer(gMain); if(routeLine) map.removeLayer(routeLine); }
+  });
+  document.getElementById('chk-opt').addEventListener('change',e=>{
+    if(e.target.checked) map.addLayer(gOpt); else map.removeLayer(gOpt);
+  });
+  document.getElementById('chk-wc').addEventListener('change',e=>{
+    if(e.target.checked) map.addLayer(gWC); else map.removeLayer(gWC);
+  });
 
-document.getElementById('btnToggleTL').onclick=()=>{const b=document.getElementById('tlBox');b.style.display=(b.style.display==='none'?'':'none');};
-loadAll();
+})();
+
+// Fullscreen-ish height toggle
+document.getElementById('btn-full').addEventListener('click',()=>{
+  const el = document.getElementById('map');
+  const h = getComputedStyle(el).height;
+  if(h.includes('62vh')) el.style.height='86vh'; else el.style.height='62vh';
+  setTimeout(()=>map.invalidateSize(), 220);
+});
+
+// Locate & follow
+let watchId = null;
+document.getElementById('btn-locate').addEventListener('click',()=>{
+  if(!navigator.geolocation) return alert('此裝置不支援定位');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude,longitude} = pos.coords;
+    L.marker([latitude,longitude],{icon:makeIcon('#ef4444')}).addTo(map);
+    map.flyTo([latitude,longitude],15,{duration:0.8});
+  },()=>alert('定位失敗'),{enableHighAccuracy:true,timeout:8000,maximumAge:10000});
+});
+document.getElementById('btn-follow').addEventListener('click', (e)=>{
+  if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; e.target.textContent='🛰️ 跟隨我'; return;}
+  if(!navigator.geolocation) return alert('此裝置不支援定位');
+  e.target.textContent='🛰️ 追蹤中…';
+  watchId = navigator.geolocation.watchPosition(pos=>{
+    const {latitude,longitude} = pos.coords;
+    map.flyTo([latitude,longitude],15,{duration:0.6});
+  },()=>{ e.target.textContent='🛰️ 跟隨我'; },{enableHighAccuracy:true,timeout:10000,maximumAge:5000});
+});
 </script>
 </body>
 </html>
