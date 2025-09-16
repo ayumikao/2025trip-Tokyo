@@ -1,99 +1,88 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2025 東京近郊旅</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2025 東京近郊旅遊</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#0f172a; color:#f1f5f9; }
-    header { text-align:center; padding:10px 0; background:#0f172a; position:sticky; top:0; z-index:1000; }
-    header h1 { margin:5px 0; font-size:20px; }
-    header p { margin:0; font-size:14px; color:#94a3b8; }
-    .date-buttons { display:flex; justify-content:center; gap:10px; margin-top:8px; flex-wrap:nowrap; overflow-x:auto; }
-    .date-btn { border:2px solid #334155; background:#1e293b; border-radius:12px; padding:4px 10px; text-align:center; cursor:pointer; }
-    .date-btn .date { display:block; font-size:14px; font-weight:bold; }
-    .date-btn .place { display:block; font-size:10px; color:#cbd5e1; }
-    .date-btn.active { border-color:#3b82f6; background:#1e3a8a; }
-    #map { height:300px; margin:10px; border-radius:8px; }
-    .leaflet-control-layers { background:#1e293b !important; color:#f1f5f9 !important; }
-    .map-controls { position:absolute; top:50px; right:10px; display:flex; flex-direction:column; gap:8px; z-index:1500; }
-    .map-btn { background:#1e293b; color:#f1f5f9; border:none; border-radius:6px; padding:4px; font-size:12px; cursor:pointer; line-height:1.2; white-space:pre; }
-    .fullscreen-btn { position:absolute; top:10px; right:10px; background:#1e293b; color:#f1f5f9; border:none; border-radius:6px; padding:4px 6px; font-size:12px; cursor:pointer; z-index:1600; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    thead th { position:sticky; top:0; background:#1e293b; color:#f1f5f9; padding:6px; font-size:13px; }
-    tbody td { padding:6px; border-top:1px solid #334155; font-size:13px; vertical-align:top; }
-    .remark { background:#0f172a; color:#f1f5f9; font-size:12px; padding:4px 6px; }
-    .mapcode { background:#1e293b; color:#fbbf24; padding:2px 6px; border-radius:10px; font-size:12px; display:inline-block; margin-top:4px; }
+    body { background: #0d1117; color: #e6edf3; font-family: sans-serif; margin: 0; padding: 0;}
+    header { padding: 10px; text-align: center;}
+    h1 { margin: 5px 0; }
+    .date-buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
+    .date-buttons button { background: #161b22; border: 2px solid #30363d; border-radius: 12px; padding: 6px 10px; color: #e6edf3; font-size: 16px; min-width: 85px; cursor: pointer; }
+    .date-buttons button small { display: block; font-size: 12px; opacity: 0.8;}
+    .date-buttons button.active { border-color: #1f6feb; background: #1f6feb; }
+    #map { height: 350px; margin: 10px; border-radius: 8px; }
+    .map-controls { position: absolute; top: 80px; right: 10px; z-index: 1000; display: flex; flex-direction: column; gap: 5px; }
+    .map-controls button { background: #161b22; border: 1px solid #30363d; color: #e6edf3; border-radius: 6px; padding: 6px; cursor: pointer; }
+    #fullscreen { position: absolute; top: 10px; right: 10px; z-index: 1000; background: #161b22; border: 1px solid #30363d; padding: 6px; border-radius: 6px; cursor: pointer;}
+    section { padding: 10px; }
+    .timeline { width: 100%; border-collapse: collapse; }
+    .timeline th, .timeline td { border: 1px solid #30363d; padding: 6px; font-size: 14px; }
+    .photo-wall { margin-top: 10px; border: 1px solid #30363d; padding: 8px; border-radius: 6px; min-height: 60px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>2025 東京近郊旅</h1>
-    <p>澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島</p>
+    <h1>2025 東京近郊旅遊</h1>
+    <div>澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島 → 河口湖</div>
     <div class="date-buttons">
-      <div class="date-btn active"><span class="date">09/20</span><span class="place">鎌倉</span></div>
-      <div class="date-btn"><span class="date">09/21</span><span class="place">箱根</span></div>
-      <div class="date-btn"><span class="date">09/22</span><span class="place">熱海</span></div>
-      <div class="date-btn"><span class="date">09/23</span><span class="place">河口湖</span></div>
+      <button class="active">09/20<small>鎌倉</small></button>
+      <button>09/21<small>箱根</small></button>
+      <button>09/22<small>熱海</small></button>
+      <button>09/23<small>河口湖</small></button>
     </div>
   </header>
+
+  <div id="fullscreen">全螢幕</div>
+  <div id="map"></div>
+  <div class="map-controls">
+    <button id="locate">我<br>在<br>這</button>
+    <button id="follow">跟<br>隨<br>我</button>
+  </div>
+
   <section>
-    <h3 style="text-align:center;font-size:14px;">互動地圖（點圖標看資訊 / 點任一標記顯示相簿）</h3>
-    <div id="map"></div>
-    <button class="fullscreen-btn" onclick="toggleFullscreen()">全螢幕</button>
-    <div class="map-controls">
-      <button class="map-btn">我
-在
-這</button>
-      <button class="map-btn">跟
-隨
-我</button>
-    </div>
+    <h3>照片牆（點任一標記顯示相簿）</h3>
+    <div class="photo-wall" id="photo-wall">暫無照片</div>
   </section>
+
   <section>
-    <h3 style="text-align:center;font-size:14px;">時間軸（9/20 +15 分鐘緩衝版）</h3>
-    <table>
+    <h3>時間軸（9/20 +15 分鐘緩衝版）</h3>
+    <table class="timeline">
       <thead>
-        <tr>
-          <th>時間</th>
-          <th>地點 / 活動</th>
-          <th>類別</th>
-          <th>車Map Code</th>
-        </tr>
+        <tr><th>時間</th><th>地點 / 活動</th><th>類別</th><th>車 Map Code</th></tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>6:30<br>8:00</td>
-          <td>澀谷出發<br><a href="#">📍 Google 地圖</a><div class="remark">備註：預留 1.5 小時車程（含早高峰小堵車）</div></td>
-          <td>包車</td>
-          <td><span class="mapcode">🚗 579 223*51</span></td>
-        </tr>
-        <tr>
-          <td>8:00<br>8:10</td>
-          <td>7-11 鎌倉七里ガ浜店<br><a href="#">📍 Google 地圖</a><div class="remark">備註：上廁所</div></td>
-          <td>休息</td>
-          <td><span class="mapcode">🚗 8 181 231*33</span></td>
-        </tr>
+      <tbody id="timeline-body">
+        <tr><td>6:30-8:00</td><td>澀谷出發<br><a href="#">Google 地圖</a><br>備註：預留 1.5 小時車程（含早高峰小堵車）</td><td>包車</td><td>🚗 579 223*51</td></tr>
+        <tr><td>8:00-8:10</td><td>7-11 鎌倉七里ガ浜店<br><a href="#">Google 地圖</a><br>備註：上廁所</td><td>休息</td><td>🚗 8 181 231*33</td></tr>
       </tbody>
     </table>
   </section>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    var map = L.map('map').setView([35.3075, 139.55], 10);
+    const map = L.map('map').setView([35.33, 139.55], 10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    var marker1 = L.marker([35.6655, 139.7304]).addTo(map).bindPopup("<b>澀谷出發</b><br>🚗 579 223*51<br>預留 1.5 小時車程（含早高峰小堵車）<br><a href='#'>📍 Google 地圖</a>");
-    var marker2 = L.marker([35.3111, 139.53]).addTo(map).bindPopup("<b>7-11 鎌倉七里ガ浜店</b><br>🚗 8 181 231*33<br>上廁所<br><a href='#'>📍 Google 地圖</a>");
-    function toggleFullscreen() {
-      let elem = document.getElementById("map");
+
+    const marker = L.marker([35.33, 139.55]).addTo(map).bindPopup("鎌倉地點示例");
+
+    document.getElementById('locate').addEventListener('click', () => {
+      map.setView([35.66, 139.7], 12);
+    });
+    document.getElementById('follow').addEventListener('click', () => {
+      alert("跟隨模式尚未實作");
+    });
+
+    document.getElementById('fullscreen').addEventListener('click', () => {
       if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch(err => alert(err));
+        document.documentElement.requestFullscreen();
       } else {
         document.exitFullscreen();
       }
-    }
+    });
   </script>
 </body>
 </html>
