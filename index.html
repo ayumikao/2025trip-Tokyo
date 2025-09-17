@@ -261,7 +261,7 @@ function toTimeBlock(s,e){ const fmt=t=>String(t||'').replace(':','：'); return
 function el(tag,cls,html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 // ======= Column map（CSV 標題別名）=======
-<script>
+
 // ======= Column map（CSV 標題別名對照）=======
 const COL = {
   start:  ['start','開始','start_time','開始時間','時間起'],
@@ -276,7 +276,7 @@ const COL = {
   layer:  ['圖層','layer','圖層分類'],   // 主行程 / 可有可無 / 廁所
   seq:    ['順序','order','seq','序']    // 可選，畫線順序
 };
-</script>
+
 function get(r, key){
   const keys = COL[key] || [];
   for(const k of keys){ if(k in r && r[k] !== '') return (r[k]||'').trim(); }
