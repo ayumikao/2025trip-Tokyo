@@ -135,6 +135,19 @@ a, a:visited{color:#2ea0ff}
   #map{height:380px}
   .date-btn{min-width:80px} /* 或 72px、96px，依你喜歡 */
 }
+  /* 讓「澀谷 → 鎌倉 → 箱根 → 熱海 → 伊豆半島」置中 */
+.breadcrumb {
+  text-align: center;
+}
+
+/* 讓「日期按鈕列」整排置中 */
+.date-row {
+  display: flex;
+  justify-content: center;  /* ← 關鍵：讓 flex 子項目置中 */
+  gap: 8px;                 /* 保持按鈕間距 */
+  overflow-x: auto;         /* 螢幕太窄時可以左右滑 */
+  -webkit-overflow-scrolling: touch;
+}
 </style>
 </head>
 <body>
