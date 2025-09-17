@@ -201,7 +201,18 @@ a, a:visited{color:#2ea0ff}
 
 /* keep leaflet controls inside without overlapping header */
 .leaflet-top.leaflet-left{top:12px;left:12px}
-.leaflet-control-zoom a{border-radius:10px;background:#0e1722;color:#fff;border:1px solid #203146}
+.leaflet-control-zoom a:hover{
+  border-radius:10px;
+  background:rgba(14,23,34,0.8);   /*+- ← 半透明，0.8=80% */
+  color:#fff;
+  border:1px solid #203146;
+}
+
+/* 控制整個縮放區塊的位置 */
+.leaflet-top.leaflet-left{
+  top:8px;     /* ← 往上貼近邊緣 */
+  left:8px;    /* ← 往左貼近邊緣 */
+}
 </style>
 
 </head>
