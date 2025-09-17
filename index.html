@@ -33,19 +33,43 @@ body{
 }
 .container{max-width:980px;margin:0 auto;padding:20px 16px 64px}
 header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
-.breadcrumb{color:var(--muted);font-size:16px;letter-spacing:.2em;margin-bottom:14px;white-space: nowrap;  text-align: center;   /* ← 新增這行 */          /* ← 不換行 */ 
-            overflow-x: auto;               /* 超出就可左右滑 */
+
+.breadcrumb{
+  color:var(--muted);
+  font-size:16px;
+  letter-spacing:.2em;
+  margin-bottom:14px;
+  white-space: nowrap;       /* ← 不換行 */
+  text-align: center;        /* ← 置中 */
+  overflow-x: auto;          /* 超出就可左右滑 */
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;}
-  .breadcrumb::-webkit-scrollbar{ display:none; }
-.date-row{display:flex;gap:16px;align-items:center;justify-content: center;  /* ← 新增這行 */ margin-bottom:12px;position:sticky;top:0;z-index:20;padding:8px 0 10px;background:linear-gradient(180deg, rgba(15,23,32,.96) 60%, rgba(15,23,32,0));backdrop-filter:saturate(140%) blur(2px)}
+  scrollbar-width: none;
+}
+.breadcrumb::-webkit-scrollbar{ display:none; }
+
+.date-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;    /* ← 置中 */
+  flex-wrap:nowrap;          /* 不換行（要全部一行顯示） */
+  gap:8px;                   /* 按鈕間距縮小 */
+  margin-bottom:12px;
+  position:sticky;
+  top:0;
+  z-index:20;
+  padding:8px 0 10px;
+  background:linear-gradient(180deg, rgba(15,23,32,.96) 60%, rgba(15,23,32,0));
+  backdrop-filter:saturate(140%) blur(2px);
+}
+.date-row::-webkit-scrollbar{ display:none; }   /* 手機隱藏捲軸 */
+
 .date-btn{
   border-radius:20px;   /* 保留圓角 */
   border:2px solid var(--accent-2);
   background:linear-gradient(180deg,#141d29,#0e1621);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.04), 0 2px 6px rgba(0,0,0,.25);
   color:var(--text);
-  padding:6px 9px;     /* ← 減少上下左右 padding */
+  padding:6px 9px;      /* ← 減少上下左右 padding */
   min-width:80px;       /* ← 原本 120px，縮小 */
   display:flex;
   flex-direction:column;
@@ -63,38 +87,29 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   color:#b9c7db;
   letter-spacing:.15em;
 }
-  .date-row{
-  display:flex;
-  flex-wrap:nowrap;        /* 不換行（要全部一行顯示） */
-  gap:8px;                 /* 按鈕間距縮小 */
-  overflow-x:auto;         /* 如果螢幕太窄，可左右滑 */
-  -webkit-overflow-scrolling: touch;
-}
-.date-row::-webkit-scrollbar{ display:none; }   /* 手機隱藏捲軸 */
-  @media (max-width: 520px) {
-  .date-btn {
-    min-width: 80px;       /* ← 手機縮小按鈕的最小寬度 */
-    padding: 6px 10px;     /* ← 縮小留白 */
-  }
-  .date-btn .d {
-    font-size: 14px;       /* 日期字體縮小 */
-  }
-  .date-btn .l {
-    font-size: 12px;       /* 地名字體縮小 */
-  }
-}
 .date-btn.active{
   border-color:#3d65ff; outline:3px solid rgba(61,101,255,.35);
   background:linear-gradient(180deg,#122645,#0f1d33);
 }
+
+@media (max-width: 520px) {
+  .date-btn {
+    min-width:80px;       /* ← 手機縮小按鈕的最小寬度 */
+    padding:6px 10px;     /* ← 縮小留白 */
+  }
+  .date-btn .d { font-size:14px; }   /* 日期字體縮小 */
+  .date-btn .l { font-size:12px; }   /* 地名字體縮小 */
+  #map{height:380px}
+}
+
 /* Map Card */
 .card{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);box-shadow:var(--card-shadow);padding:12px;margin:0 0 18px}
 #map{height:430px;border-radius:14px;overflow:hidden}
 .leaflet-container{background:#0b131c}
+
 /* map inner overlay elements */
 .map-overlay{
   position:absolute;
-  /* 以前用 inset:12px 12px auto auto; */
   top:12px;
   right:12px;    /* ← 右上角 */
   bottom:auto;
@@ -102,30 +117,34 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   z-index:450;
   pointer-events:auto;
 }
+
+/* 圖層控制 */
 .layers-card{
-  background:rgba(12,19,27,0.5);  /*例如 50% 透明，後面的 0.5 是透明度 */
- /* border:1px solid #223246; 圖層控制邊框*/
+  background:rgba(12,19,27,0.5);  /* 半透明背景 (0.5=50%透明) */
   border-radius:14px;
-  padding:1px 8px;   /* ← 這裡決定上下左右的內距 */
-  min-width:90px;   /* ← 圖層控制這行就是最小寬度 */
+  padding:4px 6px;        /* ← 控制上下左右內距，字靠邊框 */
+  min-width:90px;         /* ← 最小寬度 */
   box-shadow:0 10px 26px rgba(0,0,0,.45);
-   /* 👇 新增這裡，圖層控制高度 */
-  height:100px;         /* 固定高度 */
-  overflow-y:auto;      /* 如果超出就出現捲軸 */
+
+  /* 高度與卷軸控制 */
+  height:auto;            /* 高度隨內容 */
+  max-height:none;        /* 沒有限制高度 */
+  overflow-y:visible;     /* 不要卷軸 */
 }
 .layers-card label{
   display:flex;
   align-items:center;
-  gap:10px;
-  margin:8px 0;
+  gap:6px;                /* ← checkbox 與文字間距 */
+  margin:2px 0;           /* ← 上下間距縮小 */
+  line-height:1.2;        /* 行高更緊 */
   color:#d7e4ff;
-  font-size:14px;   /* ← 圖層控制改成你要的大小 */
+  font-size:14px;         /* ← 文字大小 */
 }
-.layers-card input{width:18px;height:18px}
+.layers-card input{width:16px;height:16px}
+
 /* vertical buttons in map */
 .vbtns{
   position:absolute;
-  /* top:95px;  ← 移除 */
   right:12px;
   bottom:12px;           /* ← 右下角 */
   display:flex;
@@ -133,14 +152,31 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   gap:10px;
   z-index:450;
 }
-.vbtn{background:rgba(13,20,28,.95);color:#fff;border:1px solid #213040;border-radius:12px;padding:10px 8px;line-height:1.2;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.3em;cursor:pointer}
+.vbtn{
+  background:rgba(13,20,28,.95);
+  color:#fff;
+  border:1px solid #213040;
+  border-radius:12px;
+  padding:10px 8px;
+  line-height:1.2;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  letter-spacing:.3em;
+  cursor:pointer;
+}
 .vbtn:active{transform:translateY(1px)}
+
+@supports (padding: max(0px)) {
+  .vbtns{ bottom: max(12px, env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); }
+}
+
 /* Photo wall */
 .section-title{font-weight:700;letter-spacing:.2em;font-size:18px;margin:2px 0 10px;color:#dce9ff}
 .photo-wall{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);min-height:120px;padding:16px;margin-bottom:18px}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .photos img{width:100%;height:100px;object-fit:cover;border-radius:10px;border:1px solid #233246}
 .empty{color:#9cb1c9}
+
 /* Timeline */
 .table{width:100%;border-collapse:separate;border-spacing:0 12px}
 .th-row th{color:#d7e6ff;text-align:left;font-weight:800;letter-spacing:.25em;padding:8px 12px}
@@ -152,25 +188,22 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .cat{font-size:20px;font-weight:800;letter-spacing:.4em}
 .mapcode{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:22px;
   background:var(--pill);border:1px solid var(--pill-border);}
-.mapcode .car{font-size:20px} .mapcode .code{color:var(--yellow);font-weight:800;font-size:20px;letter-spacing:.05em}
+.mapcode .car{font-size:20px}
+.mapcode .code{color:var(--yellow);font-weight:800;font-size:20px;letter-spacing:.05em}
 .badge{display:inline-block;margin-top:6px;color:#8fb6ff}
+
 /* util */
 hr.sep{border:none;border-top:1px dashed #213141;margin:10px 0}
 a, a:visited{color:#2ea0ff}
+
 /* position wrappers */
 .map-wrap{position:relative}
+
 /* keep leaflet controls inside without overlapping header */
 .leaflet-top.leaflet-left{top:12px;left:12px}
 .leaflet-control-zoom a{border-radius:10px;background:#0e1722;color:#fff;border:1px solid #203146}
-@media (max-width:520px){
-  #map{height:380px}
-  .date-btn{min-width:80px} /* 或 72px、96px，依你喜歡 */
-}
-  @media (max-width:520px){ .layers-card label{ font-size:13px; } }  /* 圖層控制手機大小 */ 
-  @supports (padding: max(0px)) {
-  .vbtns{ bottom: max(12px, env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); }
-}
 </style>
+
 </head>
 <body>
   <div class="container">
