@@ -261,19 +261,22 @@ function toTimeBlock(s,e){ const fmt=t=>String(t||'').replace(':','：'); return
 function el(tag,cls,html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 // ======= Column map（CSV 標題別名）=======
+<script>
+// ======= Column map（CSV 標題別名對照）=======
 const COL = {
-  start:  ['start','開始','start_time','開始時間'],
-  end:    ['end','結束','end_time','結束時間'],
+  start:  ['start','開始','start_time','開始時間','時間起'],
+  end:    ['end','結束','end_time','結束時間','時間迄'],
   title:  ['地點 / 活動','地點','活動','名稱','place','title'],
   note:   ['備註','備註說明','note','desc','說明'],
   category: ['類別','分類','category','cat'],
-  mapcode:  ['mapcode','Map Code','MapCode','MAPCODE','車Map Code','Map Code (Car)'],
+  mapcode:  ['mapcode','Map Code','MapCode','MAPCODE','車Map Code','Map Code (Car)','🚙車Map Code'],
   lat:    ['lat','緯度'],
   lng:    ['lng','經度'],
-  link:   ['google','gmap','map','link','Google 地圖','GoogleMap'],
-  layer:  ['圖層','layer','圖層分類'],
-  seq:    ['順序','order','seq','序']
+  link:   ['google','gmap','map','link','Google 地圖','GoogleMap','📍 景點連結'],
+  layer:  ['圖層','layer','圖層分類'],   // 主行程 / 可有可無 / 廁所
+  seq:    ['順序','order','seq','序']    // 可選，畫線順序
 };
+</script>
 function get(r, key){
   const keys = COL[key] || [];
   for(const k of keys){ if(k in r && r[k] !== '') return (r[k]||'').trim(); }
