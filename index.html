@@ -336,8 +336,6 @@ function get(r, key){
 }
 // 正規化字串（比對 key 用）
 function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
-// 將字串標準化：小寫 + 去掉半形/全形空白
-function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
 
 // 圖層名稱正規化（支援多寫法；任何不明的都視為主行程）
 function normalizeLayer(s){
@@ -492,53 +490,7 @@ Promise.all([
   const tb = document.getElementById('timelineBody');
   if (tb) tb.innerHTML = '';
 
-  // 建時間軸＋地圖點位（分層）＋收集主行程節點
-  rows.forEach(r=>{
-    const start = get(r,'start');
-    const end   = get(r,'end');
-    const title = get(r,'title');
-    const note  = get(r,'note');
-    const cat   = get(r,'category');
-    const code  = get(r,'mapcode');
-    const link  = get(r,'link') || '#';
-    const seqStr = get(r,'seq');
-    const seq = seqStr ? parseFloat(seqStr) : NaN;  // 畫線排序（可缺）
-
-    // timeline row（維持原來表格輸出）
-    if (tb){
-      const tr = el('tr','tr');
-      const td1 = el('td','td'); td1.style.width='110px'; td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
-      const td2 = el('td','td');
-      td2.innerHTML = `<div class="place">${title||''}</div><div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>` + (note? `<div class="note">備註：${note}</div>`:'');
-      const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
-      const td4 = el('td','td'); td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
-      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
-      tb.appendChild(tr);
-    }
-
-    // 取得座標：優先 coords-override（名稱容錯），否則用 CSV lat/lng
-    let latlng = null;
-    if (title && coordIndex[norm(title)]) {
-      latlng = coordIndex[norm(title)];
-    } else {
-      const lat = get(r,'lat');
-      const lng = get(r,'lng');
-      if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
-    }
-    if (!latlng) return; // 沒座標 → 只顯示在時間軸，不放地圖
-
-    // marker + popup
-    const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
-    const pop = `<div style="font-weight:800;font-size:18px;margin-bottom:6px">${title}</div>
-                 ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
-                 ${note? `<div style="margin-top:8px;color:#c9d8ef">${note}</div>`:''}
-                 <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
-    m.bindPopup(pop,{closeButton:true,autoPan:true});
-
-    // 用「類別」欄來判斷圖層
-const catVal = (get(r,'category') || '').trim();
-
-// --- BEGIN: 同時用「類別」與「地點 / 活動」關鍵字分層 ---
+  // --- BEGIN: 同時用「類別」與「地點 / 活動」關鍵字分層 ---
 const catVal   = (get(r,'category') || '');
 const titleVal = (get(r,'title')    || '');
 
