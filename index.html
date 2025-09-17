@@ -535,12 +535,20 @@ Promise.all([
                  <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
     m.bindPopup(pop,{closeButton:true,autoPan:true});
 
-    // 圖層分流（normalizeLayer 會把不明的當作主行程）
-    const layerName = normalizeLayer( getLayer(r) );
-    let g = gMain;
-    if (layerName === '可有可無') g = gOptional;
-    else if (layerName === '廁所') g = gRest;
-    g.addLayer(m);
+    // 用「類別」欄來判斷圖層
+const catVal = (get(r,'category') || '').trim();
+
+// 預設主行程
+let g = gMain;
+
+// 判斷關鍵字
+if (/可有可無/i.test(catVal)) {
+  g = gOptional;
+} else if (/廁所/i.test(catVal)) {
+  g = gRest;
+}
+
+g.addLayer(m);
 
     // 主行程 → 收集節點畫線
     if (g === gMain) {
