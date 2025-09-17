@@ -71,6 +71,18 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   -webkit-overflow-scrolling: touch;
 }
 .date-row::-webkit-scrollbar{ display:none; }   /* 手機隱藏捲軸 */
+  @media (max-width: 520px) {
+  .date-btn {
+    min-width: 80px;       /* ← 手機縮小按鈕的最小寬度 */
+    padding: 6px 10px;     /* ← 縮小留白 */
+  }
+  .date-btn .d {
+    font-size: 14px;       /* 日期字體縮小 */
+  }
+  .date-btn .l {
+    font-size: 11px;       /* 地名字體縮小 */
+  }
+}
 .date-btn.active{
   border-color:#3d65ff; outline:3px solid rgba(61,101,255,.35);
   background:linear-gradient(180deg,#122645,#0f1d33);
