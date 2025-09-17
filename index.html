@@ -56,9 +56,32 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 @supports (padding: max(0px)) { .vbtns{bottom:max(12px, env(safe-area-inset-bottom)); right:max(12px, env(safe-area-inset-right));} }
 .section-title{font-weight:700;letter-spacing:.2em;font-size:18px;margin:2px 0 10px;color:#dce9ff}
 .photo-wall{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);min-height:120px;padding:16px;margin-bottom:18px}
-.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
-.photos img{width:100%;height:100px;object-fit:cover;border-radius:10px;border:1px solid #233246;cursor:pointer}
-.empty{color:#9cb1c9}
+/* 照片牆縮圖（縮小版） */
+.photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); /* 原本 120px → 改 90px */
+  gap: 8px; /* 間距稍微縮小 */
+}
+.photos img {
+  width: 100%;
+  height: 80px;   /* 原本 100px → 改 80px */
+  object-fit: cover;
+  border-radius: 8px; /* 圓角也縮小一點 */
+  border: 1px solid #233246;
+  cursor: pointer;
+}
+
+/* 手機上再更小 */
+@media (max-width: 520px) {
+  .photos {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); /* 最小寬度更小 */
+    gap: 6px;
+  }
+  .photos img {
+    height: 65px;
+  }
+}
+  .empty{color:#9cb1c9}
 .table{width:100%;border-collapse:separate;border-spacing:0 12px}
 .th-row th{color:#d7e6ff;text-align:left;font-weight:800;letter-spacing:.25em;padding:8px 12px}
 .tr{background:var(--panel);border:1px solid #1f2b3a;border-radius:14px;box-shadow:var(--card-shadow)}
