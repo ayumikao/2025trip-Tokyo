@@ -213,6 +213,11 @@ a, a:visited{color:#2ea0ff}
   top:1px;     /* ← 往上貼近邊緣 */
   left:1px;    /* ← 往左貼近邊緣 */
 }
+  /* 只移除地圖卡片的外框（和陰影） */
+.card.map-wrap{
+  border: none;          /* ← 取消那條 1px 外框線的來源 */
+  /* box-shadow: none;  ← 如果連陰影都不想要，打開這行 */
+}
 </style>
 
 </head>
