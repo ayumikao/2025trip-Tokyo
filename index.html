@@ -40,9 +40,9 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   font-size:16px;
   letter-spacing:.2em;
   margin-bottom:14px;
-  white-space: nowrap;       /* ← 不換行 */
-  text-align: center;        /* ← 置中 */
-  overflow-x: auto;          /* 超出就可左右滑 */
+  white-space: nowrap;
+  text-align: center;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -52,9 +52,9 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .date-row{
   display:flex;
   align-items:center;
-  justify-content:center;    /* ← 置中 */
-  flex-wrap:nowrap;          /* 不換行（要全部一行顯示） */
-  gap:8px;                   /* 按鈕間距縮小 */
+  justify-content:center;
+  flex-wrap:nowrap;
+  gap:8px;
   margin-bottom:12px;
   position:sticky;
   top:0;
@@ -63,42 +63,34 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   background:linear-gradient(180deg, rgba(15,23,32,.96) 60%, rgba(15,23,32,0));
   backdrop-filter:saturate(140%) blur(2px);
 }
-.date-row::-webkit-scrollbar{ display:none; }   /* 手機隱藏捲軸 */
+.date-row::-webkit-scrollbar{ display:none; }
 
 /* 日期按鈕：保留原樣但縮小尺寸 */
 .date-btn{
-  border-radius:20px;   /* 保留圓角 */
+  border-radius:20px;
   border:2px solid var(--accent-2);
   background:linear-gradient(180deg,#141d29,#0e1621);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.04), 0 2px 6px rgba(0,0,0,.25);
   color:var(--text);
-  padding:6px 9px;      /* ← 減少上下左右 padding */
-  min-width:80px;       /* ← 原本 120px，縮小 */
+  padding:6px 9px;
+  min-width:80px;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:4px;              /* ← 原本 6px，縮小 */
+  gap:4px;
   text-decoration:none;
 }
-.date-btn .d{
-  font-size:16px;       /* ← 原本 22px，縮小 */
-  font-weight:700;
-  letter-spacing:.05em;
-}
-.date-btn .l{
-  font-size:12px;       /* ← 原本 14px，縮小 */
-  color:#b9c7db;
-  letter-spacing:.15em;
-}
+.date-btn .d{ font-size:16px; font-weight:700; letter-spacing:.05em; }
+.date-btn .l{ font-size:12px; color:#b9c7db; letter-spacing:.15em; }
 .date-btn.active{
   border-color:#3d65ff; outline:3px solid rgba(61,101,255,.35);
   background:linear-gradient(180deg,#122645,#0f1d33);
 }
 
 @media (max-width: 520px) {
-  .date-btn { min-width:80px; padding:6px 10px; } /* ← 手機縮小按鈕的最小寬度與留白 */
-  .date-btn .d { font-size:14px; }   /* 日期字體縮小 */
-  .date-btn .l { font-size:12px; }   /* 地名字體縮小 */
+  .date-btn { min-width:80px; padding:6px 10px; }
+  .date-btn .d { font-size:14px; }
+  .date-btn .l { font-size:12px; }
   #map{height:380px}
 }
 
@@ -109,63 +101,36 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 
 /* map inner overlay elements */
 .map-overlay{
-  position:absolute;
-  top:12px;
-  right:12px;    /* ← 右上角 */
-  bottom:auto;
-  left:auto;
-  z-index:450;
-  pointer-events:auto;
+  position:absolute; top:12px; right:12px; bottom:auto; left:auto;
+  z-index:450; pointer-events:auto;
 }
 
 /* 圖層控制（半透明、緊邊、免卷軸） */
 .layers-card{
-  background:rgba(12,19,27,0.5);  /* 半透明背景 (0.5=50%透明) */
+  background:rgba(12,19,27,0.5);
   border-radius:14px;
-  padding:4px 6px;        /* ← 控制上下左右內距，字靠邊框 */
-  min-width:90px;         /* ← 最小寬度 */
+  padding:4px 6px;
+  min-width:90px;
   box-shadow:0 10px 26px rgba(0,0,0,.45);
-
-  /* 高度與卷軸控制 */
-  height:auto;            /* 高度隨內容 */
-  max-height:none;        /* 沒有限制高度 */
-  overflow-y:visible;     /* 不要卷軸 */
+  height:auto; max-height:none; overflow-y:visible;
 }
 .layers-card label{
-  display:flex;
-  align-items:center;
-  gap:6px;                /* ← checkbox 與文字間距 */
-  margin:2px 0;           /* ← 上下間距縮小 */
-  line-height:1.2;        /* 行高更緊 */
-  color:#d7e4ff;
-  font-size:14px;         /* ← 文字大小 */
+  display:flex; align-items:center; gap:6px;
+  margin:2px 0; line-height:1.2; color:#d7e4ff; font-size:14px;
 }
 .layers-card input{width:16px;height:16px}
 
 /* 右下：我在這／跟隨我（半透明） */
 .vbtns{
-  position:absolute;
-  right:12px;
-  bottom:12px;           /* ← 右下角 */
-  display:flex;
-  flex-direction:column; /* 垂直排列：上方會是「我在這」，下方「跟隨我」 */
-  gap:10px;
-  z-index:450;
+  position:absolute; right:12px; bottom:12px;
+  display:flex; flex-direction:column; gap:10px; z-index:450;
 }
 .vbtn{
-  background:rgba(13,20,28,0.5); /* ← 50% 透明 */
-  color:#fff;
-  /*border:1px solid #213040;*/ /*我在這，邊框*/
-  border-radius:12px;
-  padding:10px 8px;
-  line-height:1.2;
-  writing-mode:vertical-rl;
-  text-orientation:mixed;
-  letter-spacing:.3em;
-  cursor:pointer;
+  background:rgba(13,20,28,0.5); color:#fff; border-radius:12px;
+  padding:10px 8px; line-height:1.2; writing-mode:vertical-rl;
+  text-orientation:mixed; letter-spacing:.3em; cursor:pointer;
 }
 .vbtn:active{transform:translateY(1px)}
-
 @supports (padding: max(0px)) {
   .vbtns{ bottom: max(12px, env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); }
 }
@@ -186,8 +151,7 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .place{font-size:20px;font-weight:700;letter-spacing:.03em}
 .note{margin-top:8px;color:#c9d8ef}
 .cat{font-size:20px;font-weight:800;letter-spacing:.4em}
-.mapcode{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:22px;
-  background:var(--pill);border:1px solid var(--pill-border);}
+.mapcode{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:22px;background:var(--pill);border:1px solid var(--pill-border);}
 .mapcode .car{font-size:20px}
 .mapcode .code{color:#ffd24a;font-weight:800;font-size:20px;letter-spacing:.05em}
 .badge{display:inline-block;margin-top:6px;color:#8fb6ff}
@@ -202,23 +166,12 @@ a, a:visited{color:#2ea0ff}
 /* keep leaflet controls inside without overlapping header */
 .leaflet-top.leaflet-left{top:12px;left:12px}
 .leaflet-control-zoom a:hover{
-  border-radius:10px;
-  background:rgba(14,23,34,0.8);   /*+- ← 半透明，0.8=80% */
-  color:#fff;
-  border:1px solid #203146;
+  border-radius:10px; background:rgba(14,23,34,0.8); color:#fff; border:1px solid #203146;
 }
-
-/* 控制整個縮放區塊的位置 */
-.leaflet-top.leaflet-left{
-  top:1px;     /* ← 往上貼近邊緣 */
-  left:1px;    /* ← 往左貼近邊緣 */
-}
+.leaflet-top.leaflet-left{ top:1px; left:1px }
 
 /* 只移除地圖卡片的外框（和陰影） */
-.card.map-wrap{
-  border: none;          /* ← 取消那條 1px 外框線的來源 */
-  /* box-shadow: none;  ← 如果連陰影都不想要，打開這行 */
-}
+.card.map-wrap{ border:none; /* box-shadow:none; */ }
 </style>
 
 </head>
@@ -281,14 +234,12 @@ a, a:visited{color:#2ea0ff}
 <script>
 // ---------------- Utilities ----------------
 function parseCSV(text){
-  // simple csv parser (handles quoted commas/newlines)
-  const rows=[];let i=0, cur='', inQ=false; const push=()=>{rows.push(cur);cur=''};
-  const out=[]; let row=[];
+  const rows=[];let i=0, cur='', inQ=false; const out=[]; let row=[];
   while(i<text.length){
     const c=text[i];
     if(inQ){
       if(c==='"' && text[i+1]==='"'){cur+='"'; i+=2; continue;}
-      if(c==='"' ){inQ=false;i++; continue;}
+      if(c==='"'){inQ=false;i++; continue;}
       cur+=c; i++; continue;
     }else{
       if(c==='"'){inQ=true;i++; continue;}
@@ -299,20 +250,17 @@ function parseCSV(text){
     }
   }
   if(cur.length || row.length){ row.push(cur); out.push(row); }
-  // first row as header
+  if(out.length===0) return [];
   const header=out.shift().map(s=>s.trim());
   return out.filter(r=>r.some(x=>x&&x.trim()!=='')).map(r=>{
     const obj={}; header.forEach((h,idx)=>obj[h]= (r[idx]??'').trim()); return obj;
   });
 }
 function byKeys(obj,keys){ for(const k of keys){ if(k in obj && obj[k]!=='' ) return obj[k]; } return ''; }
-function toTimeBlock(s,e){
-  const fmt=t=>t.replace(':','：'); // fullwidth colon feel
-  return fmt(s)+'\n'+fmt(e);
-}
+function toTimeBlock(s,e){ const fmt=t=>String(t||'').replace(':','：'); return fmt(s)+'\n'+fmt(e); }
 function el(tag,cls,html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
-// ======= Column map（你 CSV 標題怎麼寫都行，這裡列出別名）=======
+// ======= Column map（CSV 標題別名）=======
 const COL = {
   start:  ['start','開始','start_time','開始時間'],
   end:    ['end','結束','end_time','結束時間'],
@@ -323,61 +271,23 @@ const COL = {
   lat:    ['lat','緯度'],
   lng:    ['lng','經度'],
   link:   ['google','gmap','map','link','Google 地圖','GoogleMap'],
-  layer:  ['圖層','layer','圖層分類'],           // 主行程 / 可有可無 / 廁所
-  seq:    ['順序','order','seq','序']            // 可選，畫線順序
+  layer:  ['圖層','layer','圖層分類'],
+  seq:    ['順序','order','seq','序']
 };
-// 讀欄位：只要 CSV 有其中一個標題就抓得到
 function get(r, key){
   const keys = COL[key] || [];
-  for(const k of keys){
-    if(k in r && r[k] !== '') return (r[k]||'').trim();
-  }
+  for(const k of keys){ if(k in r && r[k] !== '') return (r[k]||'').trim(); }
   return '';
 }
-// 正規化字串（比對 key 用）
 function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
 
-// 圖層名稱正規化（支援多寫法；任何不明的都視為主行程）
+// 圖層名稱正規化（保留，現在改採關鍵字比對）
 function normalizeLayer(s){
   const t = norm(s);
   if (!t) return '主行程';
-
-  // 可有可無（optional/次要/選擇性…）
-  if (
-    t.includes('可有可無') ||
-    t.includes('可選') ||
-    t.includes('次要') ||
-    t.includes('optional') ||
-    t.includes('option') ||
-    t.includes('opt')
-  ) return '可有可無';
-
-  // 廁所（廁/洗手間/WC/restroom/toilet）
-  if (
-    t.includes('廁') ||
-    t.includes('洗手間') ||
-    t.includes('化妝室') ||
-    t.includes('restroom') ||
-    t.includes('toilet') ||
-    t.includes('wc')
-  ) return '廁所';
-
+  if (t.includes('可有可無')||t.includes('可選')||t.includes('次要')||t.includes('optional')||t.includes('option')||t.includes('opt')) return '可有可無';
+  if (t.includes('廁')||t.includes('洗手間')||t.includes('化妝室')||t.includes('restroom')||t.includes('toilet')||t.includes('wc')) return '廁所';
   return '主行程';
-}
-
-// 寬鬆抓圖層欄位：先用 COL.layer；抓不到就掃一遍欄名找含 layer/圖層/圖層分類/分類 的欄位
-function getLayer(r){
-  // 1) 依對應表
-  let raw = get(r,'layer');
-  if (raw) return raw;
-
-  // 2) 抓不到就寬鬆掃描欄名
-  const keys = Object.keys(r||{});
-  let foundKey = keys.find(k => /layer|圖層/i.test(k));
-  if (!foundKey) {
-    foundKey = keys.find(k => /圖層分類|分類|category/i.test(k));
-  }
-  return foundKey ? r[foundKey] : '';
 }
 
 // ---------------- Data files ----------------
@@ -389,16 +299,12 @@ if (srcBadge) srcBadge.textContent = `本頁讀取： ${FILE_TIMELINE}、${FILE_
 
 // ---------------- Map init ----------------
 const map = L.map('map',{ zoomControl:true, attributionControl:true }).setView([35.319,139.55], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
 
 // Layer groups
 const gMain = L.layerGroup().addTo(map);
 const gOptional = L.layerGroup().addTo(map);
 const gRest = L.layerGroup().addTo(map);
-const layers = { "主行程":gMain, "可有可無":gOptional, "廁所":gRest };
-// 收集主行程節點用來畫線
 let routeNodes = [];
 let routeLine = null;
 
@@ -406,15 +312,9 @@ let routeLine = null;
 const cMain = document.getElementById('layer-main');
 const cOpt  = document.getElementById('layer-optional');
 const cRes  = document.getElementById('layer-restroom');
-// 主行程核取方塊需要連同路線一起控制
 if (cMain) cMain.onchange = () => {
-  if (cMain.checked) {
-    map.addLayer(gMain);
-    if (routeLine) map.addLayer(routeLine);
-  } else {
-    map.removeLayer(gMain);
-    if (routeLine) map.removeLayer(routeLine);
-  }
+  if (cMain.checked) { map.addLayer(gMain); if (routeLine) map.addLayer(routeLine); }
+  else { map.removeLayer(gMain); if (routeLine) map.removeLayer(routeLine); }
 };
 if (cOpt) cOpt.onchange  = () => { cOpt.checked ? map.addLayer(gOptional) : map.removeLayer(gOptional); };
 if (cRes) cRes.onchange  = () => { cRes.checked ? map.addLayer(gRest) : map.removeLayer(gRest); };
@@ -460,172 +360,16 @@ function setPhotosForKey(key){
 // ---------------- Load data ----------------
 Promise.all([
   fetch(FILE_TIMELINE).then(r=>r.text()),
-  fetch(FILE_PHOTOS).then(r=>r.ok?r.text():""),
-  fetch(FILE_COORDS).then(r=>r.ok?r.json():{})
-]).then(([csvTimeline,csvPhotos,coordOverride])=>{
-  // 建 coords 索引，讓名稱比對不受大小寫/空白影響
-  const coordIndex = {};
-  if (coordOverride && typeof coordOverride === 'object') {
-    Object.keys(coordOverride).forEach(k => {
-      coordIndex[norm(k)] = coordOverride[k];
-    });
-  }
-
-  // photos（維持你原本讀法）
-  if(csvPhotos){
-    const rows = parseCSV(csvPhotos);
-    rows.forEach(r=>{
-  const start = get(r,'start');
-  const end   = get(r,'end');
-  const title = get(r,'title');
-  const note  = get(r,'note');
-  const cat   = get(r,'category');
-  const code  = get(r,'mapcode');
-  const link  = get(r,'link') || '#';
-  const seqStr = get(r,'seq');
-  const seq = seqStr ? parseFloat(seqStr) : NaN;  // 畫線排序（可缺）
-
-  // --- 時間軸表格 ---
-  if (tb){
-    const tr = el('tr','tr');
-    const td1 = el('td','td');
-    td1.style.width='110px';
-    td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
-
-    const td2 = el('td','td');
-    td2.innerHTML =
-      `<div class="place">${title||''}</div>
-       <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>`
-      + (note? `<div class="note">備註：${note}</div>`:'');
-
-    const td3 = el('td','td');
-    td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
-
-    const td4 = el('td','td');
-    td4.innerHTML =
-      `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
-
-    tr.appendChild(td1);
-    tr.appendChild(td2);
-    tr.appendChild(td3);
-    tr.appendChild(td4);
-    tb.appendChild(tr);
-  }
-
-  // --- 取得座標 ---
-  let latlng = null;
-  if (title && coordIndex[norm(title)]) {
-    latlng = coordIndex[norm(title)];
-  } else {
-    const lat = get(r,'lat');
-    const lng = get(r,'lng');
-    if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
-  }
-  if (!latlng) return; // 沒座標 → 只顯示在時間軸
-
-  // --- Marker + popup ---
-  const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
-  const pop = `<div style="font-weight:800;font-size:18px;margin-bottom:6px">${title}</div>
-               ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
-               ${note? `<div style="margin-top:8px;color:#c9d8ef">${note}</div>`:''}
-               <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
-  m.bindPopup(pop,{closeButton:true,autoPan:true});
-
-  // --- BEGIN: 同時用「類別」與「地點 / 活動」關鍵字分層 ---
-  const catVal   = (get(r,'category') || '');
-  const titleVal = (get(r,'title')    || '');
-
-}).then(([csvTimeline,csvPhotos,coordOverride])=>{
-  // 建 coords 索引，讓名稱比對不受大小寫/空白影響
-  const coordIndex = {};
-  if (coordOverride && typeof coordOverride === 'object') {
-    Object.keys(coordOverride).forEach(k => {
-      coordIndex[norm(k)] = coordOverride[k];
-    });
-  }
-
-  // ---------- 讀照片 CSV → 只建立 photoMap，別動到時間軸 ----------
-  if (csvPhotos) {
-    const photoRows = parseCSV(csvPhotos);
-    photoRows.forEach(r=>{
-      const k = byKeys(r, ['key','Key','名稱','地點','place','title']);
-      const url = byKeys(r,['url','URL','link']);
-      if(!k || !url) return;
-      (photoMap[k] = photoMap[k] || []).push(url);
-    });
-  }
-
-  // ---------- 讀時間軸 CSV → 建表格 + 地圖點位 + 分層 + 主行程連線 ----------
-  const tripRows = parseCSV(csvTimeline);
-
-  // 清空舊資料
-  routeNodes = [];
-  const tb = document.getElementById('timelineBody');
-  if (tb) tb.innerHTML = '';
-
-  tripRows.forEach(r=>{
-    const start = get(r,'start');
-    const end   = get(r,'end');
-    const title = get(r,'title');
-    const note  = get(r,'note');
-    const cat   = get(r,'category');
-    const code  = get(r,'mapcode');
-    const link  = get(r,'link') || '#';
-    const seqStr = get(r,'seq');
-    const seq = seqStr ? parseFloat(seqStr) : NaN;  // 畫線排序（可缺）
-
-    // --- 時間軸表格 ---
-    if (tb){
-      const tr = el('tr','tr');
-      const td1 = el('td','td');
-      td1.style.width='110px';
-      td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
-
-      const td2 = el('td','td');
-      td2.innerHTML =
-        `<div class="place">${title||''}</div>
-         <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>`
-        + (note? `<div class="note">備註：${note}</div>`:'');
-
-      const td3 = el('td','td');
-      td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
-
-      const td4 = el('td','td');
-      td4.innerHTML =
-        `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
-
-      tr.appendChild(td1);
-      tr.appendChild(td2);
-      tr.appendChild(td3);
-      tr.appendChild(td4);
-      tb.appendChild(tr);
-    }
-
-    // --- 取得座標（優先 coords-override，其次 CSV 的 lat/lng） ---
-    let latlng = null;
-    if (title && coordIndex[norm(title)]) {
-      latlng = coordIndex[norm(title)];
-    } else {
-      const lat = get(r,'lat');
-      const lng = get(r,'lng');
-      if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
-    }
-    if (!latlng) return; // 沒座標 → 只顯示在時間軸
-
-Promise.all([
-  fetch(FILE_TIMELINE).then(r=>r.text()),
   fetch(FILE_PHOTOS).then(r=>r.ok ? r.text() : ""),
   fetch(FILE_COORDS).then(r=>r.ok ? r.json() : {})
 ]).then(([csvTimeline, csvPhotos, coordOverride])=>{
   // ---- 建 coords 索引（名稱容錯：小寫＋去空白）----
   const coordIndex = {};
   if (coordOverride && typeof coordOverride === 'object') {
-    Object.keys(coordOverride).forEach(k => {
-      coordIndex[norm(k)] = coordOverride[k];
-    });
+    Object.keys(coordOverride).forEach(k => { coordIndex[norm(k)] = coordOverride[k]; });
   }
 
-  // ---- 讀照片 CSV：只建 photoMap（不要動到時間軸/地圖）----
+  // ---- 讀照片 CSV：只建 photoMap ----
   if (csvPhotos) {
     const photoRows = parseCSV(csvPhotos);
     photoRows.forEach(r=>{
@@ -673,7 +417,7 @@ Promise.all([
       tb.appendChild(tr);
     }
 
-    // 取得座標：優先 coords-override（名稱容錯），否則用 CSV lat/lng
+    // 取得座標：優先 coords-override，否則 CSV lat/lng
     let latlng = null;
     if (title && coordIndex[norm(title)]) {
       latlng = coordIndex[norm(title)];
@@ -682,7 +426,7 @@ Promise.all([
       const lng = get(r,'lng');
       if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
     }
-    if (!latlng) return; // 沒座標 → 只顯示在時間軸
+    if (!latlng) return;
 
     // Marker + popup
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
@@ -692,9 +436,9 @@ Promise.all([
                  <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
     m.bindPopup(pop,{closeButton:true,autoPan:true});
 
-    // 同時看「類別」＋「地點/活動」兩欄關鍵字做分層（不限定在哪一欄）
+    // 分層：同時看「類別」＋「地點/活動」兩欄關鍵字（任一命中就分流）
     const catVal   = (get(r,'category') || '');
-    const titleVal = (get(r,'title') || '');
+    const titleVal = (get(r,'title')    || '');
     const normText = (catVal + ' ' + titleVal).toLowerCase().replace(/\s|　/g,'');
 
     let group = gMain; // 預設主行程
@@ -706,9 +450,7 @@ Promise.all([
     group.addLayer(m);
 
     // 主行程節點 → 供畫線
-    if (group === gMain) {
-      routeNodes.push({ seq, latlng });
-    }
+    if (group === gMain) routeNodes.push({ seq, latlng });
   });
 
   // 畫主行程連線
@@ -723,27 +465,6 @@ Promise.all([
     map.fitBounds(routeLine.getBounds(), { padding: [20,20] });
     if (cMain && !cMain.checked) { map.removeLayer(routeLine); }
   }
-}).catch(err=>{
-  console.error(err);
-  const tb = document.getElementById('timelineBody');
-  if (tb) tb.innerHTML = '<tr><td colspan="4" class="td">讀取資料失敗，請確認 CSV / JSON 檔案是否與 index 同層。</td></tr>';
-});
-
-  // 迴圈結束後：畫主行程連線
-  routeNodes.sort((a,b)=>{
-    const A = isNaN(a.seq) ? Number.POSITIVE_INFINITY : a.seq;
-    const B = isNaN(b.seq) ? Number.POSITIVE_INFINITY : b.seq;
-    return A - B;
-  });
-  const routePoints = routeNodes.map(n => n.latlng);
-  if (routePoints.length > 1) {
-    routeLine = L.polyline(routePoints, { color:'#5ea0ff', weight:3, opacity:0.85 }).addTo(map);
-    // 可選：自動縮放到主行程範圍
-    map.fitBounds(routeLine.getBounds(), { padding: [20,20] });
-    // 若「主行程」核取方塊一開始是取消的，也把線一起隱藏
-    if (cMain && !cMain.checked) { map.removeLayer(routeLine); }
-  }
-
 }).catch(err=>{
   console.error(err);
   const tb = document.getElementById('timelineBody');
