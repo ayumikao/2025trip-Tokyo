@@ -336,12 +336,50 @@ function get(r, key){
 }
 // 正規化字串（比對 key 用）
 function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
-// 圖層名稱正規化（任何不明的都視為主行程）
+// 將字串標準化：小寫 + 去掉半形/全形空白
+function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
+
+// 圖層名稱正規化（支援多寫法；任何不明的都視為主行程）
 function normalizeLayer(s){
-  const t = (s||'').toString();
-  if (/可有可無/.test(t)) return '可有可無';
-  if (/廁所/.test(t))   return '廁所';
+  const t = norm(s);
+  if (!t) return '主行程';
+
+  // 可有可無（optional/次要/選擇性…）
+  if (
+    t.includes('可有可無') ||
+    t.includes('可選') ||
+    t.includes('次要') ||
+    t.includes('optional') ||
+    t.includes('option') ||
+    t.includes('opt')
+  ) return '可有可無';
+
+  // 廁所（廁/洗手間/WC/restroom/toilet）
+  if (
+    t.includes('廁') ||
+    t.includes('洗手間') ||
+    t.includes('化妝室') ||
+    t.includes('restroom') ||
+    t.includes('toilet') ||
+    t.includes('wc')
+  ) return '廁所';
+
   return '主行程';
+}
+
+// 寬鬆抓圖層欄位：先用 COL.layer；抓不到就掃一遍欄名找含 layer/圖層/圖層分類/分類 的欄位
+function getLayer(r){
+  // 1) 依對應表
+  let raw = get(r,'layer');
+  if (raw) return raw;
+
+  // 2) 抓不到就寬鬆掃描欄名
+  const keys = Object.keys(r||{});
+  let foundKey = keys.find(k => /layer|圖層/i.test(k));
+  if (!foundKey) {
+    foundKey = keys.find(k => /圖層分類|分類|category/i.test(k));
+  }
+  return foundKey ? r[foundKey] : '';
 }
 
 // ---------------- Data files ----------------
