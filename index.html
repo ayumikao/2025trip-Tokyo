@@ -538,22 +538,33 @@ Promise.all([
     // 用「類別」欄來判斷圖層
 const catVal = (get(r,'category') || '').trim();
 
+// --- BEGIN: 同時用「類別」與「地點 / 活動」關鍵字分層 ---
+const catVal   = (get(r,'category') || '');
+const titleVal = (get(r,'title')    || '');
+
+// 正規化：小寫 + 去空白（含全形）
+const normText = (catVal + ' ' + titleVal).toLowerCase().replace(/\s|　/g,'');
+
 // 預設主行程
 let g = gMain;
 
-// 判斷關鍵字
-if (/可有可無/i.test(catVal)) {
-  g = gOptional;
-} else if (/廁所/i.test(catVal)) {
+// 廁所（任一欄位含關鍵字就歸類）
+if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) {
   g = gRest;
 }
+// 可有可無
+else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) {
+  g = gOptional;
+}
 
+// 加入對應圖層
 g.addLayer(m);
 
-    // 主行程 → 收集節點畫線
-    if (g === gMain) {
-      routeNodes.push({ seq, latlng });
-    }
+// 只對主行程收集節點，供畫連線
+if (g === gMain) {
+  routeNodes.push({ seq, latlng });
+}
+// --- END ---
   });
 
   // 迴圈結束後：畫主行程連線
