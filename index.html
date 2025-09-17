@@ -612,7 +612,79 @@ Promise.all([
     }
     if (!latlng) return; // 沒座標 → 只顯示在時間軸
 
-    // --- Marker + popup ---
+Promise.all([
+  fetch(FILE_TIMELINE).then(r=>r.text()),
+  fetch(FILE_PHOTOS).then(r=>r.ok ? r.text() : ""),
+  fetch(FILE_COORDS).then(r=>r.ok ? r.json() : {})
+]).then(([csvTimeline, csvPhotos, coordOverride])=>{
+  // ---- 建 coords 索引（名稱容錯：小寫＋去空白）----
+  const coordIndex = {};
+  if (coordOverride && typeof coordOverride === 'object') {
+    Object.keys(coordOverride).forEach(k => {
+      coordIndex[norm(k)] = coordOverride[k];
+    });
+  }
+
+  // ---- 讀照片 CSV：只建 photoMap（不要動到時間軸/地圖）----
+  if (csvPhotos) {
+    const photoRows = parseCSV(csvPhotos);
+    photoRows.forEach(r=>{
+      const k = byKeys(r, ['key','Key','名稱','地點','place','title']);
+      const url = byKeys(r, ['url','URL','link']);
+      if (!k || !url) return;
+      (photoMap[k] = photoMap[k] || []).push(url);
+    });
+  }
+
+  // ---- 讀時間軸 CSV：建表格＋地圖點位＋圖層判斷＋主行程連線 ----
+  const tripRows = parseCSV(csvTimeline);
+
+  // 清空舊資料
+  routeNodes = [];
+  const tb = document.getElementById('timelineBody');
+  if (tb) tb.innerHTML = '';
+
+  tripRows.forEach(r=>{
+    const start = get(r,'start');
+    const end   = get(r,'end');
+    const title = get(r,'title');
+    const note  = get(r,'note');
+    const cat   = get(r,'category');
+    const code  = get(r,'mapcode');
+    const link  = get(r,'link') || '#';
+    const seqStr= get(r,'seq');
+    const seq   = seqStr ? parseFloat(seqStr) : NaN;
+
+    // 時間軸表格
+    if (tb){
+      const tr = el('tr','tr');
+      const td1 = el('td','td'); td1.style.width='110px';
+      td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
+
+      const td2 = el('td','td');
+      td2.innerHTML =
+        `<div class="place">${title||''}</div>
+         <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>`
+        + (note ? `<div class="note">備註：${note}</div>` : '');
+
+      const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
+      const td4 = el('td','td'); td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+      tb.appendChild(tr);
+    }
+
+    // 取得座標：優先 coords-override（名稱容錯），否則用 CSV lat/lng
+    let latlng = null;
+    if (title && coordIndex[norm(title)]) {
+      latlng = coordIndex[norm(title)];
+    } else {
+      const lat = get(r,'lat');
+      const lng = get(r,'lng');
+      if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
+    }
+    if (!latlng) return; // 沒座標 → 只顯示在時間軸
+
+    // Marker + popup
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
     const pop = `<div style="font-weight:800;font-size:18px;margin-bottom:6px">${title}</div>
                  ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
@@ -620,26 +692,26 @@ Promise.all([
                  <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
     m.bindPopup(pop,{closeButton:true,autoPan:true});
 
-    // --- 同時用「類別」與「地點 / 活動」關鍵字分層（不限定在哪欄位） ---
+    // 同時看「類別」＋「地點/活動」兩欄關鍵字做分層（不限定在哪一欄）
     const catVal   = (get(r,'category') || '');
-    const titleVal = (get(r,'title')    || '');
+    const titleVal = (get(r,'title') || '');
     const normText = (catVal + ' ' + titleVal).toLowerCase().replace(/\s|　/g,'');
 
-    let g = gMain; // 預設主行程
+    let group = gMain; // 預設主行程
     if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) {
-      g = gRest;
+      group = gRest;
     } else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) {
-      g = gOptional;
+      group = gOptional;
     }
-    g.addLayer(m);
+    group.addLayer(m);
 
-    // 主行程 → 收集節點畫線
-    if (g === gMain) {
+    // 主行程節點 → 供畫線
+    if (group === gMain) {
       routeNodes.push({ seq, latlng });
     }
   });
 
-  // --- 畫主行程連線 ---
+  // 畫主行程連線
   routeNodes.sort((a,b)=>{
     const A = isNaN(a.seq) ? Number.POSITIVE_INFINITY : a.seq;
     const B = isNaN(b.seq) ? Number.POSITIVE_INFINITY : b.seq;
