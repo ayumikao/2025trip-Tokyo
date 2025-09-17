@@ -280,16 +280,16 @@ Promise.all([
     Object.keys(coordOverride).forEach(k => { coordIndex[norm(k)] = coordOverride[k]; });
   }
 
-  // 讀照片 CSV → 只建 photoMap
-  if(csvPhotos){
-    const rows = parseCSV(csvPhotos);
-    rows.forEach(r=>{
-      const k = byKeys(r, ['key','Key','名稱','地點','place','title']);
-      const url = byKeys(r,['url','URL','link']);
-      if(!k || !url) return;
-      (photoMap[k] = photoMap[k] || []).push(url);
-    });
-  }
+  // 讀照片 CSV → 支援 image / 對應地點 欄位
+if(csvPhotos){
+  const rows = parseCSV(csvPhotos);
+  rows.forEach(r=>{
+    const k = byKeys(r, ['key','Key','名稱','地點','place','title','對應地點']);
+    const url = byKeys(r,['url','URL','link','image']);
+    if(!k || !url) return;
+    (photoMap[k] = photoMap[k] || []).push(url);
+  });
+}
 
   // 解析行程 CSV
   const rows = parseCSV(csvTimeline);
