@@ -440,6 +440,35 @@ Promise.all([
     if (g === gMain) {
       routeNodes.push({ seq, latlng });
     }
+    // --- 圖層判斷（同時看 類別/地點/備註；先判斷「廁所」再判斷「可有可無」） ---
+const titleVal = String(get(r,'title')    || '');
+const catVal   = String(get(r,'category') || '');
+const noteVal  = String(get(r,'note')     || '');
+
+// 合併後做正規化（小寫＋去掉半形/全形空白）
+const normText = (catVal + ' ' + titleVal + ' ' + noteVal).toLowerCase().replace(/\s|　/g,'');
+
+let g = gMain;      // 預設主行程
+let layerName = '主行程';
+
+// 先判斷廁所
+if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) {
+  g = gRest;
+  layerName = '廁所';
+}
+// 再判斷可有可無
+else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) {
+  g = gOptional;
+  layerName = '可有可無';
+}
+
+console.log('[layer]', titleVal, '→', layerName, '| normText=', normText);
+
+g.addLayer(m);
+
+if (g === gMain) {
+  routeNodes.push({ seq, latlng });
+}
   });
 
   // 畫主行程連線
