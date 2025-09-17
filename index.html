@@ -107,8 +107,11 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
  /* border:1px solid #223246; 圖層控制邊框*/
   border-radius:14px;
   padding:10px 14px;
-  min-width:110px;   /* ← 這行就是最小寬度 */
+  min-width:90px;   /* ← 圖層控制這行就是最小寬度 */
   box-shadow:0 10px 26px rgba(0,0,0,.45);
+   /* 👇 新增這裡，圖層控制高度 */
+  height:100px;         /* 固定高度 */
+  overflow-y:auto;      /* 如果超出就出現捲軸 */
 }
 .layers-card label{
   display:flex;
@@ -163,7 +166,7 @@ a, a:visited{color:#2ea0ff}
   #map{height:380px}
   .date-btn{min-width:80px} /* 或 72px、96px，依你喜歡 */
 }
-  @media (max-width:520px){ .layers-card label{ font-size:12px; } }  /* 圖層控制手機大小 */ 
+  @media (max-width:520px){ .layers-card label{ font-size:13px; } }  /* 圖層控制手機大小 */ 
   @supports (padding: max(0px)) {
   .vbtns{ bottom: max(12px, env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); }
 }
