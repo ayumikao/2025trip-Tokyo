@@ -536,7 +536,7 @@ Promise.all([
     m.bindPopup(pop,{closeButton:true,autoPan:true});
 
     // 圖層分流（normalizeLayer 會把不明的當作主行程）
-    const layerName = normalizeLayer( get(r,'layer') );
+    const layerName = normalizeLayer( getLayer(r) );
     let g = gMain;
     if (layerName === '可有可無') g = gOptional;
     else if (layerName === '廁所') g = gRest;
