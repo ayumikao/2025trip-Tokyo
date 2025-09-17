@@ -109,7 +109,7 @@ a, a:visited{color:#2ea0ff}
     </div>
 
     <div>
-      <div class="section-title">照片牆（點任一標記顯示相簿）</div>
+      <div class="section-title">照片牆（點地圖或時間軸地點顯示相簿）</div>
       <div class="photo-wall">
         <div id="photos" class="photos"></div>
         <div id="emptyPhotos" class="empty">暫無照片</div>
@@ -153,28 +153,25 @@ function parseCSV(text){
     }
   }
   if(cur.length||row.length){row.push(cur); out.push(row);}
-  const header=(out.shift()||[]).map(s=>s.trim());
+  const header=(out.shift()||[]).map(s=>s.trim().replace(/^\ufeff/,'')); // 去 BOM
   return out.filter(r=>r.some(x=>x&&x.trim()!=='')).map(r=>{
     const obj={}; header.forEach((h,idx)=>obj[h]=(r[idx]??'').trim()); return obj;
   });
 }
 function byKeys(obj,keys){ for(const k of keys){ if(k in obj && obj[k]!=='' ) return obj[k]; } return ''; }
+function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
 function toTimeBlock(s,e){ const fmt=t=>(t||'').replace(':','：'); return fmt(s)+'\n'+fmt(e); }
 function el(tag,cls,html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
-function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
 
-// 嘗試從 Google 地圖連結抽緯經（支援 %2C、逗號、以及 <lat>,<lng>）
+// 嘗試從 Google 地圖連結抽緯經
 function extractLatLngFromLink(link){
   if(!link) return null;
   try{
     const dec = decodeURIComponent(link);
-    // 1) query=lat,lng
     let m = dec.match(/query=([-0-9.]+)\s*,\s*([-0-9.]+)/i);
     if(m) return [parseFloat(m[1]), parseFloat(m[2])];
-    // 2) <lat>,<lng>
     m = dec.match(/<\s*([-0-9.]+)\s*>\s*,\s*<\s*([-0-9.]+)\s*>/i);
     if(m) return [parseFloat(m[1]), parseFloat(m[2])];
-    // 3) @lat,lng, (地圖網址有時是 .../@35.12,139.55,14z)
     m = dec.match(/@\s*([-0-9.]+)\s*,\s*([-0-9.]+)/i);
     if(m) return [parseFloat(m[1]), parseFloat(m[2])];
   }catch(e){}
@@ -192,7 +189,7 @@ const COL = {
   lat:    ['lat','緯度'],
   lng:    ['lng','經度'],
   link:   ['google','gmap','map','link','Google 地圖','GoogleMap','📍 景點連結'],
-  layer:  ['圖層','layer','圖層分類'],  // 若你未來真的加了這欄
+  layer:  ['圖層','layer','圖層分類'],
   seq:    ['順序','order','seq','序']
 };
 function get(r, key){
@@ -220,6 +217,9 @@ const gRest = L.layerGroup().addTo(map);
 // 收集主行程節點用來畫線
 let routeNodes = [];
 let routeLine = null;
+
+// marker 索引（讓表格/照片牆互相定位）
+const markerIndex = {}; // norm(title) -> marker
 
 // UI layer toggles
 const cMain = document.getElementById('layer-main');
@@ -257,15 +257,27 @@ if (btnFollow) btnFollow.onclick = ()=>{
 };
 
 // Photos mapping
-let photoMap = {}; // key => [urls]
+let photoMap = {}; // key(norm title) => [urls]
 function setPhotosForKey(key){
   const wrap = document.getElementById('photos'); const empty = document.getElementById('emptyPhotos');
   if (!wrap || !empty) return;
   wrap.innerHTML='';
-  const arr = photoMap[key]||[];
+  const arr = photoMap[norm(key)] || [];
+  console.log("查找照片:", key, "→", arr); // debug
   if(arr.length===0){ empty.style.display='block'; return; }
   empty.style.display='none';
-  arr.forEach(u=>{ const img = new Image(); img.src=u; wrap.appendChild(img); });
+  arr.forEach(u=>{ const img = new Image(); img.loading="lazy"; img.decoding="async"; img.src=u; wrap.appendChild(img); });
+}
+
+// 讓表格/照片牆也能把地圖聚焦到該點
+function focusTo(title){
+  const mk = markerIndex[norm(title)];
+  if(mk){
+    const ll = mk.getLatLng();
+    mk.openPopup();
+    map.flyTo(ll, Math.max(map.getZoom(), 14), {duration:0.6});
+  }
+  setPhotosForKey(title);
 }
 
 // ---------------- Load data ----------------
@@ -280,16 +292,23 @@ Promise.all([
     Object.keys(coordOverride).forEach(k => { coordIndex[norm(k)] = coordOverride[k]; });
   }
 
-  // 讀照片 CSV → 支援 image / 對應地點 欄位
-if(csvPhotos){
-  const rows = parseCSV(csvPhotos);
-  rows.forEach(r=>{
-    const k = byKeys(r, ['key','Key','名稱','地點','place','title','對應地點']);
-    const url = byKeys(r,['url','URL','link','image']);
-    if(!k || !url) return;
-    (photoMap[k] = photoMap[k] || []).push(url);
-  });
-}
+  // 讀照片 CSV → 支援 image / 對應地點；也容錯 url/place；處理 BOM
+  if(csvPhotos){
+    const rows = parseCSV(csvPhotos);
+    rows.forEach(r=>{
+      // 清 BOM 的欄位名（防萬一）
+      Object.keys(r).forEach(k=>{
+        const cleanKey = k.replace(/^\ufeff/, '');
+        if(cleanKey !== k){ r[cleanKey] = r[k]; delete r[k]; }
+      });
+      const kRaw = byKeys(r, ['key','Key','名稱','地點','place','title','對應地點']);
+      const url  = byKeys(r, ['url','URL','link','image']);
+      if(!kRaw || !url) return;
+      const key = norm(kRaw);
+      (photoMap[key] = photoMap[key] || []).push(url);
+      console.log("照片 map 建立:", key, "→", url); // debug
+    });
+  }
 
   // 解析行程 CSV
   const rows = parseCSV(csvTimeline);
@@ -314,6 +333,9 @@ if(csvPhotos){
     // Timeline row
     if (tb){
       const tr = el('tr','tr');
+      tr.style.cursor = 'pointer';
+      tr.onclick = ()=> focusTo(title);
+
       const td1 = el('td','td'); td1.style.width='110px'; td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
       const td2 = el('td','td');
       td2.innerHTML = `<div class="place">${title||''}</div><div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>` + (note? `<div class="note">備註：${note}</div>`:'');
@@ -359,6 +381,9 @@ if(csvPhotos){
       g = gOptional;
     }
     g.addLayer(m);
+
+    // 索引存 marker
+    markerIndex[norm(title)] = m;
 
     // 主行程節點收集
     if (g === gMain) {
