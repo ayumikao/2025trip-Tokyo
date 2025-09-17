@@ -535,29 +535,126 @@ Promise.all([
   const catVal   = (get(r,'category') || '');
   const titleVal = (get(r,'title')    || '');
 
-  // 正規化：小寫 + 去空白（含全形）
-  const normText = (catVal + ' ' + titleVal).toLowerCase().replace(/\s|　/g,'');
-
-  // 預設主行程
-  let g = gMain;
-
-  // 廁所（任一欄位含關鍵字就歸類）
-  if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) {
-    g = gRest;
-  }
-  // 可有可無
-  else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) {
-    g = gOptional;
+}).then(([csvTimeline,csvPhotos,coordOverride])=>{
+  // 建 coords 索引，讓名稱比對不受大小寫/空白影響
+  const coordIndex = {};
+  if (coordOverride && typeof coordOverride === 'object') {
+    Object.keys(coordOverride).forEach(k => {
+      coordIndex[norm(k)] = coordOverride[k];
+    });
   }
 
-  // 加入對應圖層
-  g.addLayer(m);
-
-  // 只對主行程收集節點，供畫連線
-  if (g === gMain) {
-    routeNodes.push({ seq, latlng });
+  // ---------- 讀照片 CSV → 只建立 photoMap，別動到時間軸 ----------
+  if (csvPhotos) {
+    const photoRows = parseCSV(csvPhotos);
+    photoRows.forEach(r=>{
+      const k = byKeys(r, ['key','Key','名稱','地點','place','title']);
+      const url = byKeys(r,['url','URL','link']);
+      if(!k || !url) return;
+      (photoMap[k] = photoMap[k] || []).push(url);
+    });
   }
-  // --- END ---
+
+  // ---------- 讀時間軸 CSV → 建表格 + 地圖點位 + 分層 + 主行程連線 ----------
+  const tripRows = parseCSV(csvTimeline);
+
+  // 清空舊資料
+  routeNodes = [];
+  const tb = document.getElementById('timelineBody');
+  if (tb) tb.innerHTML = '';
+
+  tripRows.forEach(r=>{
+    const start = get(r,'start');
+    const end   = get(r,'end');
+    const title = get(r,'title');
+    const note  = get(r,'note');
+    const cat   = get(r,'category');
+    const code  = get(r,'mapcode');
+    const link  = get(r,'link') || '#';
+    const seqStr = get(r,'seq');
+    const seq = seqStr ? parseFloat(seqStr) : NaN;  // 畫線排序（可缺）
+
+    // --- 時間軸表格 ---
+    if (tb){
+      const tr = el('tr','tr');
+      const td1 = el('td','td');
+      td1.style.width='110px';
+      td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
+
+      const td2 = el('td','td');
+      td2.innerHTML =
+        `<div class="place">${title||''}</div>
+         <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>`
+        + (note? `<div class="note">備註：${note}</div>`:'');
+
+      const td3 = el('td','td');
+      td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
+
+      const td4 = el('td','td');
+      td4.innerHTML =
+        `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
+
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      tr.appendChild(td3);
+      tr.appendChild(td4);
+      tb.appendChild(tr);
+    }
+
+    // --- 取得座標（優先 coords-override，其次 CSV 的 lat/lng） ---
+    let latlng = null;
+    if (title && coordIndex[norm(title)]) {
+      latlng = coordIndex[norm(title)];
+    } else {
+      const lat = get(r,'lat');
+      const lng = get(r,'lng');
+      if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
+    }
+    if (!latlng) return; // 沒座標 → 只顯示在時間軸
+
+    // --- Marker + popup ---
+    const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
+    const pop = `<div style="font-weight:800;font-size:18px;margin-bottom:6px">${title}</div>
+                 ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
+                 ${note? `<div style="margin-top:8px;color:#c9d8ef">${note}</div>`:''}
+                 <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
+    m.bindPopup(pop,{closeButton:true,autoPan:true});
+
+    // --- 同時用「類別」與「地點 / 活動」關鍵字分層（不限定在哪欄位） ---
+    const catVal   = (get(r,'category') || '');
+    const titleVal = (get(r,'title')    || '');
+    const normText = (catVal + ' ' + titleVal).toLowerCase().replace(/\s|　/g,'');
+
+    let g = gMain; // 預設主行程
+    if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) {
+      g = gRest;
+    } else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) {
+      g = gOptional;
+    }
+    g.addLayer(m);
+
+    // 主行程 → 收集節點畫線
+    if (g === gMain) {
+      routeNodes.push({ seq, latlng });
+    }
+  });
+
+  // --- 畫主行程連線 ---
+  routeNodes.sort((a,b)=>{
+    const A = isNaN(a.seq) ? Number.POSITIVE_INFINITY : a.seq;
+    const B = isNaN(b.seq) ? Number.POSITIVE_INFINITY : b.seq;
+    return A - B;
+  });
+  const routePoints = routeNodes.map(n => n.latlng);
+  if (routePoints.length > 1) {
+    routeLine = L.polyline(routePoints, { color:'#5ea0ff', weight:3, opacity:0.85 }).addTo(map);
+    map.fitBounds(routeLine.getBounds(), { padding: [20,20] });
+    if (cMain && !cMain.checked) { map.removeLayer(routeLine); }
+  }
+}).catch(err=>{
+  console.error(err);
+  const tb = document.getElementById('timelineBody');
+  if (tb) tb.innerHTML = '<tr><td colspan="4" class="td">讀取資料失敗，請確認 CSV / JSON 檔案是否與 index 同層。</td></tr>';
 });
 
   // 迴圈結束後：畫主行程連線
