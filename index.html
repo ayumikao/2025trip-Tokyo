@@ -119,6 +119,29 @@ a, a:visited{color:#2ea0ff}
   .layers-card label{ font-size:12px; }
   .layers-card input{ width:13px; height:13px; }
 }
+
+/* === Popup 白色半透明底 + 不貼齊右邊 === */
+.leaflet-popup-content-wrapper{
+  background: rgba(255,255,255,0.92);
+  border: 1px solid #d0d8e0;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.25);
+}
+.leaflet-popup-tip{
+  background: rgba(255,255,255,0.92);
+  border: 1px solid #d0d8e0;
+}
+.leaflet-container .leaflet-popup{
+  margin-right: 12px;
+  margin-left: 12px;
+}
+@media (max-width:520px){
+  .leaflet-container .leaflet-popup{
+    margin-right: 16px;
+    margin-left: 12px;
+  }
+}
+  
 </style>
 </head>
 <body>
