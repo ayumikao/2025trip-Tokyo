@@ -100,7 +100,7 @@ a, a:visited{color:#2ea0ff}
 #lightbox button{background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.22);padding:8px 14px;font-size:16px;color:#fff;border-radius:10px;cursor:pointer}
 #lightbox button:hover{background:rgba(255,255,255,0.28)}
 
-/* Popup：白 0.72 + 深色字 + 陰影，並留邊 */
+/* Popup：白 0.72 + 深色字 + 陰影 */
 .leaflet-popup-content-wrapper{
   background: rgba(255,255,255,0.72) !important;
   border: 1px solid #d0d8e0;
@@ -269,6 +269,7 @@ const COL = {
   lng:    ['lng','經度'],
   link:   ['google','gmap','map','link','Google 地圖','GoogleMap','📍 景點連結'],
   layer:  ['圖層','layer','圖層分類'],
+  rest:   ['🚻 廁所','廁所','restroom','toilet','トイレ'],
   seq:    ['順序','order','seq','序']
 };
 function get(r, key){
@@ -277,7 +278,7 @@ function get(r, key){
   return '';
 }
 
-/* 圖層偵測（加強：中英日 + 同義字 + emoji） */
+/* 關鍵字（只看「備註、類別」兩欄；rest 欄視為廁所） */
 const RESTROOM_RE = /(🚻|廁|公廁|洗手間|化妝室|トイレ|toilet|rest\s*room|wc)/i;
 const OPTIONAL_RE = /(可有可無|可選|選擇性|雨備|雨天備案|雨天備用|備案|備用|備援|optional|option|opt)/i;
 
@@ -372,7 +373,7 @@ function closeLightbox(){ document.getElementById('lightbox').style.display = 'n
 function showPrev(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex-1+currentPhotos.length)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 function showNext(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex+1)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 
-// Toast & Copy（可靠版）
+// Toast & Copy
 function showToast(msg){
   const t = document.getElementById('toast');
   if(!t) return;
@@ -390,13 +391,9 @@ async function copyMapCode(place, code){
       return;
     }
     const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.top = '-1000px';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
+    ta.value = text; ta.style.position = 'fixed'; ta.style.top = '-1000px';
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy'); document.body.removeChild(ta);
     showToast(ok ? `已複製：${text}` : '複製失敗，請手動複製');
   }catch(e){
     console.warn(e);
@@ -406,8 +403,7 @@ async function copyMapCode(place, code){
 document.addEventListener('click', (ev)=>{
   const btn = ev.target.closest('.copy-btn');
   if (!btn) return;
-  ev.preventDefault();
-  ev.stopPropagation();
+  ev.preventDefault(); ev.stopPropagation();
   copyMapCode(btn.dataset.place, btn.dataset.code);
 });
 
@@ -462,11 +458,15 @@ Promise.all([
     const cat   = get(r,'category');
     const code  = get(r,'mapcode');
     const link  = get(r,'link') || '#';
-    const layer = get(r,'layer');   // 讀『圖層』欄位
+    const restField = get(r,'rest'); // `🚻 廁所` 欄
     const seqStr = get(r,'seq');
     const seq = seqStr ? parseFloat(seqStr) : NaN;
 
-    // 時間軸列（可點擊）
+    // === 依規則判斷圖層（只看「備註、類別」；rest 欄有字即視為廁所） ===
+    const isOptional = OPTIONAL_RE.test(note) || OPTIONAL_RE.test(cat);
+    const isRestroom = !!restField || RESTROOM_RE.test(note) || RESTROOM_RE.test(cat);
+
+    // 時間軸列
     if (tb){
       const tr = el('tr','tr'); tr.style.cursor='pointer'; tr.onclick = ()=> focusTo(title);
       const td1 = el('td','td'); td1.style.width='110px'; td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
@@ -475,6 +475,7 @@ Promise.all([
         <div class="place">${title||''}</div>
         <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>
         ${note? `<div class="note">備註：${note}</div>`:''}
+        ${isRestroom && restField ? `<div class="note">🚻 ${restField}</div>`:''}
       `;
       const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
       const td4 = el('td','td');
@@ -496,16 +497,12 @@ Promise.all([
         if (byLink) latlng = byLink;
       }
     }
-
-    // 如果是廁所/雨備但沒座標，console 提醒
     if (!latlng) {
-      const maybeRest = RESTROOM_RE.test(title||'') || RESTROOM_RE.test(cat||'') || RESTROOM_RE.test(note||'') || RESTROOM_RE.test(layer||'');
-      const maybeOpt  = OPTIONAL_RE.test(title||'') || OPTIONAL_RE.test(cat||'') || OPTIONAL_RE.test(note||'') || OPTIONAL_RE.test(layer||'');
-      if (maybeRest || maybeOpt) console.warn('[缺座標的非主行程項目]', { title, layer, link, note });
+      if (isOptional || isRestroom) console.warn('[缺座標的非主行程/廁所項目]', { title, link });
       return;
     }
 
-    // Marker + popup
+    // 建 marker + popup
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
     const popHtml = `
       <div class="popup-title">${title}</div>
@@ -514,6 +511,7 @@ Promise.all([
           <button class="copy-btn" type="button" data-place="${(title||'').replace(/"/g,'&quot;')}" data-code="${(code||'').replace(/"/g,'&quot;')}">複製</button>
         </div>`:''}
       ${note? `<div class="popup-note">${note}</div>`:''}
+      ${isRestroom && restField ? `<div class="popup-note">🚻 ${restField}</div>`:''}
       <div class="popup-link"><a href="${link}" target="_blank">📍 Google 地圖</a></div>
     `;
     m.bindPopup(popHtml,{
@@ -523,26 +521,24 @@ Promise.all([
       autoPanPaddingBottomRight: [16,16]
     });
 
-    // 圖層判斷（固定順序：先廁所 → 再可有可無 → 否則主行程）
-    const titleVal = String(title||'');
-    const catVal   = String(cat||'');
-    const noteVal  = String(note||'');
-    const layerVal = String(layer||'');
+    // === 多重圖層掛載邏輯 ===
+    // 1) 廁所：一定加到廁所層
+    // 2) 可有可無：一定加到可有可無層
+    // 3) 主要行程：預設加；但如果是「可有可無」，就不加到主層
+    //    例外：若同時是廁所（你希望可同時三層顯示），則主層也要加
+    if (isRestroom) gRest.addLayer(m);
+    if (isOptional) gOptional.addLayer(m);
+    const addMain = (!isOptional) || (isRestroom && isOptional); // 可有可無→不主；但 可有可無+廁所→三層都要
+    if (addMain) gMain.addLayer(m);
 
-    let targetGroup = gMain;
-    if (RESTROOM_RE.test(titleVal) || RESTROOM_RE.test(catVal) || RESTROOM_RE.test(noteVal) || RESTROOM_RE.test(layerVal)) {
-      targetGroup = gRest;
-      if (m.setZIndexOffset) m.setZIndexOffset(100);
-    } else if (OPTIONAL_RE.test(titleVal) || OPTIONAL_RE.test(catVal) || OPTIONAL_RE.test(noteVal) || OPTIONAL_RE.test(layerVal)) {
-      targetGroup = gOptional;
-    }
-    targetGroup.addLayer(m);
+    // 讓廁所點位靠上層
+    if (isRestroom && m.setZIndexOffset) m.setZIndexOffset(100);
 
     // 索引
     markerIndex[norm(title)] = m;
 
-    // 主行程連線（只連主行程）
-    if (targetGroup === gMain) routeNodes.push({ seq, latlng });
+    // 主行程連線（只連主行程節點）
+    if (addMain) routeNodes.push({ seq, latlng });
   });
 
   // 畫主行程連線
