@@ -40,48 +40,33 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .date-btn .l{font-size:12px;color:#b9c7db;letter-spacing:.15em}
 .date-btn.active{border-color:#3d65ff; outline:3px solid rgba(61,101,255,.35); background:linear-gradient(180deg,#122645,#0f1d33)}
 @media (max-width: 520px){ .date-btn{min-width:80px;padding:6px 10px} .date-btn .d{font-size:14px} .date-btn .l{font-size:12px} #map{height:380px} }
+
 .card{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);box-shadow:var(--card-shadow);padding:12px;margin:0 0 18px}
 #map{height:430px;border-radius:14px;overflow:hidden}
 .leaflet-container{background:#0b131c}
-.map-overlay{position:absolute; top:12px; right:12px; bottom:auto; left:auto; z-index:450; pointer-events:auto;}
+
+/* 圖層卡片 */
+.map-overlay{position:absolute; top:12px; right:12px; z-index:450;}
 .layers-card{
-  background:rgba(12,19,27,0.5); border-radius:14px; padding:4px 6px; min-width:90px; box-shadow:0 10px 26px rgba(0,0,0,.45);
-  height:auto; max-height:none; overflow-y:visible;
+  background:rgba(12,19,27,0.5); border-radius:14px; padding:4px 6px; min-width:90px;
+  box-shadow:0 10px 26px rgba(0,0,0,.45);
 }
 .layers-card label{display:flex; align-items:center; gap:6px; margin:2px 0; line-height:1.2; color:#d7e4ff; font-size:14px}
 .layers-card input{width:16px;height:16px}
+
+/* 垂直按鈕 */
 .vbtns{position:absolute; right:12px; bottom:12px; display:flex; flex-direction:column; gap:10px; z-index:450}
 .vbtn{background:rgba(13,20,28,0.5); color:var(--text); border-radius:12px; padding:10px 8px; line-height:1.2; writing-mode:vertical-rl; text-orientation:mixed; letter-spacing:.3em; cursor:pointer}
 .vbtn:active{transform:translateY(1px)}
 @supports (padding: max(0px)) { .vbtns{bottom:max(12px, env(safe-area-inset-bottom)); right:max(12px, env(safe-area-inset-right));} }
-.section-title{font-weight:700;letter-spacing:.2em;font-size:18px;margin:2px 0 10px;color:#dce9ff}
-.photo-wall{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);min-height:120px;padding:16px;margin-bottom:18px}
-/* 照片牆縮圖（縮小版） */
-.photos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); /* 原本 120px → 改 90px */
-  gap: 8px; /* 間距稍微縮小 */
-}
-.photos img {
-  width: 100%;
-  height: 80px;   /* 原本 100px → 改 80px */
-  object-fit: cover;
-  border-radius: 8px; /* 圓角也縮小一點 */
-  border: 1px solid #233246;
-  cursor: pointer;
-}
 
-/* 手機上再更小 */
-@media (max-width: 520px) {
-  .photos {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); /* 最小寬度更小 */
-    gap: 6px;
-  }
-  .photos img {
-    height: 65px;
-  }
-}
-  .empty{color:#9cb1c9}
+/* 照片牆縮圖（縮小版） */
+.photo-wall{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);min-height:120px;padding:16px;margin-bottom:18px}
+.photos { display:grid; grid-template-columns:repeat(auto-fill, minmax(90px, 1fr)); gap:8px; }
+.photos img { width:100%; height:80px; object-fit:cover; border-radius:8px; border:1px solid #233246; cursor:pointer; }
+.empty{color:#9cb1c9}
+
+/* 表格 */
 .table{width:100%;border-collapse:separate;border-spacing:0 12px}
 .th-row th{color:#d7e6ff;text-align:left;font-weight:800;letter-spacing:.25em;padding:8px 12px}
 .tr{background:var(--panel);border:1px solid #1f2b3a;border-radius:14px;box-shadow:var(--card-shadow)}
@@ -102,78 +87,38 @@ a, a:visited{color:#2ea0ff}
 .card.map-wrap{border:none}
 
 /* Lightbox（大圖瀏覽） */
-#lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.9);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  flex-direction: column;
-}
-#lightbox img {
-  max-width: 90%;
-  max-height: 80%;
-  border-radius: 12px;
-  box-shadow: 0 18px 60px rgba(0,0,0,0.6);
-}
-#lightbox .controls {
-  margin-top: 12px;
-  display: flex;
-  gap: 14px;
-}
-#lightbox button {
-  background: rgba(255,255,255,0.16);
-  border: 1px solid rgba(255,255,255,0.22);
-  padding: 8px 14px;
-  font-size: 16px;
-  color: #fff;
-  border-radius: 10px;
-  cursor: pointer;
-}
+#lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
+#lightbox img { max-width: 90%; max-height: 80%; border-radius: 12px; box-shadow: 0 18px 60px rgba(0,0,0,0.6); }
+#lightbox .controls { margin-top: 12px; display: flex; gap: 14px; }
+#lightbox button { background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.22); padding: 8px 14px; font-size: 16px; color: #fff; border-radius: 10px; cursor: pointer; }
 #lightbox button:hover { background: rgba(255,255,255,0.28); }
 
-<style>
-:root{
-  --bg:#0f1720; 
-  ...
-}
+/* === Popup 顏色統一變亮（所有裝置） === */
+.leaflet-popup-content{ color:#eaf2ff; line-height:1.6; }
+.popup-title{ font-weight:800; font-size:18px; color:#ffffff; margin:0 0 6px; }
+.popup-note{ margin-top:6px; color:#c9d8ef; }
+.popup-link{ margin-top:6px; }
+.popup-link a{ color:#77b7ff; text-decoration:underline; }
 
-/* 你原本的 CSS 在這裡 */
-
-/* === 在這裡貼上 === */
-.leaflet-popup-content{
-  color: #eaf2ff;
-}
-.popup-title{
-  font-weight: 800;
-  font-size: 18px;
-  color: #ffffff;
-}
-.popup-note{ color: #c9d8ef; }
-.popup-link a{ color:#77b7ff; text-decoration: underline; }
-
+/* === 手機版 ≤520px：縮小框（字體維持） === */
 @media (max-width:520px){
-  .leaflet-popup-content-wrapper{
-    padding: 6px;
-    border-radius: 10px;
-  }
-  .leaflet-popup-content{
-    margin: 6px 8px;
-  }
-  .popup-title{ margin-bottom: 4px; }
-  .mapcode{
-    padding: 5px 8px;
-    border-radius: 10px;
-  }
-  .mapcode .code,
-  .mapcode .car{
-    font-size: 18px;
-  }
+  .photos { grid-template-columns:repeat(auto-fill, minmax(70px, 1fr)); gap:6px; }
+  .photos img { height:65px; }
+
+  .leaflet-popup-content-wrapper{ padding:6px; border-radius:10px; background:rgba(12,19,27,0.95); border:1px solid #1f2b3a; box-shadow:0 16px 40px rgba(0,0,0,.45); }
+  .leaflet-popup-tip{ background:rgba(12,19,27,0.95); border:1px solid #1f2b3a; }
+  .leaflet-popup-content{ margin:6px 8px; }
+
+  /* MapCode 膠囊縮小，但字體保留 */
+  .mapcode{ padding:6px 10px; border-radius:12px; }
+  .mapcode .code{ font-size:18px; }
+  .mapcode .car{ font-size:18px; }
+
+  /* 圖層卡片也縮小 */
+  .layers-card{ padding:3px 5px; border-radius:10px; }
+  .layers-card label{ font-size:12px; }
+  .layers-card input{ width:13px; height:13px; }
 }
-</style>
-  
 </style>
 </head>
 <body>
@@ -269,7 +214,7 @@ function norm(s){ return String(s||'').toLowerCase().replace(/\s|　/g,''); }
 function toTimeBlock(s,e){ const fmt=t=>(t||'').replace(':','：'); return fmt(s)+'\n'+fmt(e); }
 function el(tag,cls,html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
-// 嘗試從 Google 地圖連結抽緯經
+// 從 Google 地圖連結抽緯經
 function extractLatLngFromLink(link){
   if(!link) return null;
   try{
@@ -374,7 +319,7 @@ function setPhotosForKey(key){
   wrap.innerHTML='';
   const arr = photoMap[norm(key)] || [];
   currentPhotos = arr;
-  console.log("查找照片:", key, "→", arr); // debug
+  console.log("查找照片:", key, "→", arr);
   if(arr.length===0){ empty.style.display='block'; return; }
   empty.style.display='none';
   arr.forEach((u,i)=>{ 
@@ -393,24 +338,14 @@ function openLightbox(index){
   lb.style.display = 'flex';
 }
 function closeLightbox(){ document.getElementById('lightbox').style.display = 'none'; }
-function showPrev(){
-  if(currentPhotos.length===0) return;
-  currentIndex = (currentIndex-1+currentPhotos.length)%currentPhotos.length;
-  document.getElementById('lightbox-img').src = currentPhotos[currentIndex];
-}
-function showNext(){
-  if(currentPhotos.length===0) return;
-  currentIndex = (currentIndex+1)%currentPhotos.length;
-  document.getElementById('lightbox-img').src = currentPhotos[currentIndex];
-}
+function showPrev(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex-1+currentPhotos.length)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
+function showNext(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex+1)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 
 // 綁定 Lightbox 控制
 document.getElementById('close').onclick = closeLightbox;
 document.getElementById('prev').onclick = showPrev;
 document.getElementById('next').onclick = showNext;
-document.getElementById('lightbox').onclick = e=>{
-  if(e.target.id==='lightbox') closeLightbox(); // 點背景關閉
-};
+document.getElementById('lightbox').onclick = e=>{ if(e.target.id==='lightbox') closeLightbox(); };
 
 // 讓表格/照片牆也能把地圖聚焦到該點
 function focusTo(title){
@@ -429,39 +364,33 @@ Promise.all([
   fetch(FILE_PHOTOS).then(r=>r.ok?r.text():""),
   fetch(FILE_COORDS).then(r=>r.ok?r.json():{})
 ]).then(([csvTimeline,csvPhotos,coordOverride])=>{
-  // 建 coords 索引（名稱容錯：小寫＋去空白）
+  // coords override 索引（名稱容錯）
   const coordIndex = {};
   if (coordOverride && typeof coordOverride === 'object') {
     Object.keys(coordOverride).forEach(k => { coordIndex[norm(k)] = coordOverride[k]; });
   }
 
-  // 讀照片 CSV → 支援 image / 對應地點；也容錯 url/place；處理 BOM
+  // 讀照片 CSV（支援 image/對應地點 與 url/place；處理 BOM）
   if(csvPhotos){
     const rows = parseCSV(csvPhotos);
     rows.forEach(r=>{
-      // 清 BOM 的欄位名（防萬一）
       Object.keys(r).forEach(k=>{
-        const cleanKey = k.replace(/^\ufeff/, '');
-        if(cleanKey !== k){ r[cleanKey] = r[k]; delete r[k]; }
+        const cleanKey = k.replace(/^\ufeff/, ''); if(cleanKey !== k){ r[cleanKey] = r[k]; delete r[k]; }
       });
       const kRaw = byKeys(r, ['key','Key','名稱','地點','place','title','對應地點']);
       const url  = byKeys(r, ['url','URL','link','image']);
       if(!kRaw || !url) return;
       const key = norm(kRaw);
       (photoMap[key] = photoMap[key] || []).push(url);
-      console.log("照片 map 建立:", key, "→", url); // debug
+      console.log("照片 map 建立:", key, "→", url);
     });
   }
 
-  // 解析行程 CSV
+  // 讀行程 CSV
   const rows = parseCSV(csvTimeline);
-
-  // 清空舊資料
-  routeNodes = [];
   const tb = document.getElementById('timelineBody');
   if (tb) tb.innerHTML = '';
 
-  // 建表格＋地圖點位（分層）＋收集主行程節點
   rows.forEach(r=>{
     const start = get(r,'start');
     const end   = get(r,'end');
@@ -471,67 +400,58 @@ Promise.all([
     const code  = get(r,'mapcode');
     const link  = get(r,'link') || '#';
     const seqStr = get(r,'seq');
-    const seq = seqStr ? parseFloat(seqStr) : NaN;  // 畫線排序（可缺）
+    const seq = seqStr ? parseFloat(seqStr) : NaN;
 
-    // Timeline row（可點擊聚焦＋看照片）
+    // 時間軸列（可點擊）
     if (tb){
-      const tr = el('tr','tr');
-      tr.style.cursor = 'pointer';
-      tr.onclick = ()=> focusTo(title);
-
+      const tr = el('tr','tr'); tr.style.cursor='pointer'; tr.onclick = ()=> focusTo(title);
       const td1 = el('td','td'); td1.style.width='110px'; td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
       const td2 = el('td','td');
       td2.innerHTML = `<div class="place">${title||''}</div><div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>` + (note? `<div class="note">備註：${note}</div>`:'');
       const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
       const td4 = el('td','td'); td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
-      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
-      tb.appendChild(tr);
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tb.appendChild(tr);
     }
 
-    // 取得座標：coords-override > CSV lat/lng > 由連結解析
+    // 取得座標：coords-override > CSV lat/lng > Google 連結
     let latlng = null;
-    if (title && coordIndex[norm(title)]) {
-      latlng = coordIndex[norm(title)];
-    } else {
-      const lat = get(r,'lat');
-      const lng = get(r,'lng');
+    if (title && coordIndex[norm(title)]) { latlng = coordIndex[norm(title)]; }
+    else {
+      const lat = get(r,'lat'); const lng = get(r,'lng');
       if (lat && lng) latlng = [parseFloat(lat), parseFloat(lng)];
       if (!latlng) {
         const byLink = extractLatLngFromLink(link);
         if (byLink) latlng = byLink;
       }
     }
-    if (!latlng) return; // 沒座標 → 只顯示在時間軸
+    if (!latlng) return;
 
-    // Marker + popup
+    // Marker + popup（改用 class，避免 inline style 蓋掉 CSS）
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
-    const pop = `<div style="font-weight:800;font-size:18px;margin-bottom:6px">${title}</div>
-                 ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
-                 ${note? `<div style="margin-top:8px;color:#c9d8ef">${note}</div>`:''}
-                 <div style="margin-top:6px"><a href="${link}" target="_blank">📍 Google 地圖</a></div>`;
+    const pop = `
+      <div class="popup-title">${title}</div>
+      ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
+      ${note? `<div class="popup-note">${note}</div>`:''}
+      <div class="popup-link"><a href="${link}" target="_blank">📍 Google 地圖</a></div>
+    `;
     m.bindPopup(pop,{closeButton:true,autoPan:true});
 
-    // 圖層判斷（同時看 類別/地點/備註；先廁所再可有可無）
-    const titleVal = String(get(r,'title')    || '');
-    const catVal   = String(get(r,'category') || '');
-    const noteVal  = String(get(r,'note')     || '');
-    const normText = (catVal + ' ' + titleVal + ' ' + noteVal).toLowerCase().replace(/\s|　/g,'');
+    // 圖層判斷
+    const titleVal = String(get(r,'title')||'');
+    const catVal   = String(get(r,'category')||'');
+    const noteVal  = String(get(r,'note')||'');
+    const normText = (catVal+' '+titleVal+' '+noteVal).toLowerCase().replace(/\s|　/g,'');
 
     let g = gMain;
-    if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) {
-      g = gRest;
-    } else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) {
-      g = gOptional;
-    }
+    if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) g = gRest;
+    else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) g = gOptional;
     g.addLayer(m);
 
-    // 索引存 marker
+    // 索引
     markerIndex[norm(title)] = m;
 
-    // 主行程節點收集
-    if (g === gMain) {
-      routeNodes.push({ seq, latlng });
-    }
+    // 主行程連線
+    if (g === gMain) routeNodes.push({ seq, latlng });
   });
 
   // 畫主行程連線
