@@ -82,7 +82,7 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
   padding:12px 16px;
   border-radius:22px;
   background: rgba(0,0,0,0.50);  /* 車map code黑色半透明 */
-  /* border: 1px solid #d0d8e0;           淺灰邊框 */
+  /* border: 1px solid #d0d8e0;  淺灰邊框（如要可打開） */
 }
 .mapcode .car{font-size:20px}
 .mapcode .code{color:#ffd24a;font-weight:800;font-size:20px;letter-spacing:.05em}
@@ -101,7 +101,7 @@ a, a:visited{color:#2ea0ff}
 #lightbox button{background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.22);padding:8px 14px;font-size:16px;color:#fff;border-radius:10px;cursor:pointer}
 #lightbox button:hover{background:rgba(255,255,255,0.28)}
 
-/* === Popup：白色 0.92 + 深色字（桌機/手機一致） === */
+/* === Popup：白色 0.72 + 深色字（桌機/手機一致） === */
 .leaflet-popup-content-wrapper{
   background: rgba(255,255,255,0.72) !important;
   border: 1px solid #d0d8e0;
@@ -114,11 +114,11 @@ a, a:visited{color:#2ea0ff}
 }
 .leaflet-popup-content{
   margin: 8px 10px;
-  color: #25324a;           /* 主文深藍灰 */
+  color: #25324a;
   line-height: 1.6;
 }
 .popup-title{font-weight:800;font-size:18px;color:#0b1220;margin:0 0 6px}
-.popup-note{margin-top:6px;color:#42526e}   /* 備註次要色 */
+.popup-note{margin-top:6px;color:#42526e}
 .popup-link{margin-top:6px}
 .popup-link a{color:#2b6fff;text-decoration:underline}
 
@@ -262,6 +262,10 @@ function get(r, key){
   for(const k of keys){ if(k in r && r[k] !== '') return (r[k]||'').trim(); }
   return '';
 }
+
+/* 🔧 新增：更穩的關鍵字（中/英/日 + emoji） */
+const RESTROOM_RE = /(🚻|廁|公廁|洗手間|化妝室|トイレ|toilet|rest\s*room|wc)/i;
+const OPTIONAL_RE = /(可有可無|可選|optional|option|opt)/i;
 
 // ---------------- Data files ----------------
 const FILE_TIMELINE = "timeline-2025-09-20_v6.csv";
@@ -436,7 +440,15 @@ Promise.all([
         if (byLink) latlng = byLink;
       }
     }
-    if (!latlng) return;
+
+    /* 🔧 提醒：廁所沒有座標 → Console 列出，方便補 coords-override */
+    if (!latlng) {
+      const maybeRest = RESTROOM_RE.test(title) || RESTROOM_RE.test(cat) || RESTROOM_RE.test(note);
+      if (maybeRest) {
+        console.warn('[缺座標的廁所項目]', { title, link, note });
+      }
+      return; // 沒座標就不放 marker
+    }
 
     // Marker + popup（使用 autoPanPadding 留邊距）
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
@@ -449,26 +461,36 @@ Promise.all([
     m.bindPopup(popHtml,{
       closeButton:true,
       autoPan:true,
-      autoPanPaddingTopLeft: [16,16],       // ⬅︎ 左上保留空
-      autoPanPaddingBottomRight: [16,16]    // ⬅︎ 右下保留空（避免貼邊）
+      autoPanPaddingTopLeft: [16,16],
+      autoPanPaddingBottomRight: [16,16]
     });
 
-    // 圖層判斷
+    // 圖層判斷（先判廁所，再判可有可無）
     const titleVal = String(get(r,'title')||'');
     const catVal   = String(get(r,'category')||'');
     const noteVal  = String(get(r,'note')||'');
-    const normText = (catVal+' '+titleVal+' '+noteVal).toLowerCase().replace(/\s|　/g,'');
 
-    let g = gMain;
-    if (/(廁|洗手間|化妝室|wc|restroom|toilet)/i.test(normText)) g = gRest;
-    else if (/(可有可無|可選|optional|option|opt)/i.test(normText)) g = gOptional;
-    g.addLayer(m);
+    let targetGroup = gMain;
+    if (RESTROOM_RE.test(titleVal) || RESTROOM_RE.test(catVal) || RESTROOM_RE.test(noteVal)) {
+      targetGroup = gRest;
+      if (m.setZIndexOffset) m.setZIndexOffset(100); // 讓廁所點位稍微浮上
+      /* 如需專屬圖示，解除下行註解：
+      m.setIcon(L.divIcon({
+        className: 'restroom-pin',
+        html: '<div style="background:#2b6fff;color:#fff;border-radius:10px;padding:2px 6px;font-size:12px;line-height:1;">🚻</div>',
+        iconSize: [28, 18], iconAnchor: [14, 18], popupAnchor: [0, -10]
+      }));
+      */
+    } else if (OPTIONAL_RE.test(titleVal) || OPTIONAL_RE.test(catVal) || OPTIONAL_RE.test(noteVal)) {
+      targetGroup = gOptional;
+    }
+    targetGroup.addLayer(m);
 
     // 索引
     markerIndex[norm(title)] = m;
 
     // 主行程連線
-    if (g === gMain) routeNodes.push({ seq, latlng });
+    if (targetGroup === gMain) routeNodes.push({ seq, latlng });
   });
 
   // 畫主行程連線
