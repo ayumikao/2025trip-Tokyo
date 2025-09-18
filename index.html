@@ -277,7 +277,7 @@ function get(r, key){
   return '';
 }
 
-/* ✅ 圖層偵測：加入「雨備」「備案」等，並把『圖層』欄位一起判斷 */
+/* 圖層偵測 */
 const RESTROOM_RE = /(🚻|廁|公廁|洗手間|化妝室|トイレ|toilet|rest\s*room|wc)/i;
 const OPTIONAL_RE = /(可有可無|可選|選擇性|雨備|雨天備案|雨天備用|備案|備用|備援|optional|option|opt)/i;
 
@@ -372,7 +372,7 @@ function closeLightbox(){ document.getElementById('lightbox').style.display = 'n
 function showPrev(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex-1+currentPhotos.length)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 function showNext(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex+1)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 
-// Toast & Copy
+// Toast & Copy（可靠版）
 function showToast(msg){
   const t = document.getElementById('toast');
   if(!t) return;
@@ -384,19 +384,41 @@ function showToast(msg){
 async function copyMapCode(place, code){
   const text = `${place}：${code||''}`;
   try{
-    if (navigator.clipboard && navigator.clipboard.writeText) {
+    if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      showToast(`已複製：${text}`);
+      return;
     }
-    showToast(`已複製：${text}`);
+    // Fallback：隱藏 textarea + execCommand
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) {
+      showToast(`已複製：${text}`);
+    } else {
+      showToast('複製失敗，請手動複製');
+    }
   }catch(e){
     console.warn(e);
-    showToast('複製失敗，請手動複製');
+    showToast(window.isSecureContext ? '複製失敗，請手動複製' : '需要在 HTTPS 或本機伺服器執行，才能自動複製');
   }
 }
+
+// 事件委派：所有 .copy-btn 點擊都在這裡接，並阻止事件往上冒泡到地圖
+document.addEventListener('click', (ev)=>{
+  const btn = ev.target.closest('.copy-btn');
+  if (!btn) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  copyMapCode(btn.dataset.place, btn.dataset.code);
+});
 
 // 讓表格/照片牆也能把地圖聚焦到該點
 function focusTo(title){
@@ -464,8 +486,11 @@ Promise.all([
         ${note? `<div class="note">備註：${note}</div>`:''}
       `;
       const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
-      const copyBtn = code ? `<button class="copy-btn" onclick="copyMapCode(${JSON.stringify(title)}, ${JSON.stringify(code)})">複製</button>` : ``;
-      const td4 = el('td','td'); td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span>${copyBtn}</div>`;
+      const td4 = el('td','td');
+      td4.innerHTML = `<div class="mapcode">
+          <span class="car">🚗</span><span class="code">${code||''}</span>
+          ${code ? `<button class="copy-btn" type="button" data-place="${(title||'').replace(/"/g,'&quot;')}" data-code="${(code||'').replace(/"/g,'&quot;')}">複製</button>` : ``}
+        </div>`;
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tb.appendChild(tr);
     }
 
@@ -483,17 +508,19 @@ Promise.all([
 
     // 如果是廁所但沒座標，console 提醒
     if (!latlng) {
-      const maybeRest = RESTROOM_RE.test(title) || RESTROOM_RE.test(cat) || RESTROOM_RE.test(note) || RESTROOM_RE.test(layer);
+      const maybeRest = RESTROOM_RE.test(title||'') || RESTROOM_RE.test(cat||'') || RESTROOM_RE.test(note||'') || RESTROOM_RE.test(layer||'');
       if (maybeRest) console.warn('[缺座標的廁所項目]', { title, link, note });
       return;
     }
 
     // Marker + popup
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
-    const popupCopyBtn = code ? `<button class="copy-btn" onclick="copyMapCode(${JSON.stringify(title)}, ${JSON.stringify(code)})">複製</button>` : ``;
     const popHtml = `
       <div class="popup-title">${title}</div>
-      ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span>${popupCopyBtn}</div>`:''}
+      ${code? `<div class="mapcode">
+          <span class="car">🚗</span><span class="code">${code}</span>
+          <button class="copy-btn" type="button" data-place="${(title||'').replace(/"/g,'&quot;')}" data-code="${(code||'').replace(/"/g,'&quot;')}">複製</button>
+        </div>`:''}
       ${note? `<div class="popup-note">${note}</div>`:''}
       <div class="popup-link"><a href="${link}" target="_blank">📍 Google 地圖</a></div>
     `;
@@ -504,7 +531,7 @@ Promise.all([
       autoPanPaddingBottomRight: [16,16]
     });
 
-    // ✅ 圖層判斷（先廁所，再可有可無/雨備；同時看 title/category/note/圖層）
+    // 圖層判斷（先廁所，再可有可無/雨備）
     const titleVal = String(title||'');
     const catVal   = String(cat||'');
     const noteVal  = String(note||'');
