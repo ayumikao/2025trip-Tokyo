@@ -133,6 +133,47 @@ a, a:visited{color:#2ea0ff}
   cursor: pointer;
 }
 #lightbox button:hover { background: rgba(255,255,255,0.28); }
+
+<style>
+:root{
+  --bg:#0f1720; 
+  ...
+}
+
+/* 你原本的 CSS 在這裡 */
+
+/* === 在這裡貼上 === */
+.leaflet-popup-content{
+  color: #eaf2ff;
+}
+.popup-title{
+  font-weight: 800;
+  font-size: 18px;
+  color: #ffffff;
+}
+.popup-note{ color: #c9d8ef; }
+.popup-link a{ color:#77b7ff; text-decoration: underline; }
+
+@media (max-width:520px){
+  .leaflet-popup-content-wrapper{
+    padding: 6px;
+    border-radius: 10px;
+  }
+  .leaflet-popup-content{
+    margin: 6px 8px;
+  }
+  .popup-title{ margin-bottom: 4px; }
+  .mapcode{
+    padding: 5px 8px;
+    border-radius: 10px;
+  }
+  .mapcode .code,
+  .mapcode .car{
+    font-size: 18px;
+  }
+}
+</style>
+  
 </style>
 </head>
 <body>
