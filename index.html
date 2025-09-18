@@ -60,7 +60,7 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .vbtn:active{transform:translateY(1px)}
 @supports (padding: max(0px)) { .vbtns{bottom:max(12px, env(safe-area-inset-bottom)); right:max(12px, env(safe-area-inset-right));} }
 
-/* 照片牆縮圖（縮小版） */
+/* 照片牆縮圖 */
 .photo-wall{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);min-height:120px;padding:16px;margin-bottom:18px}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
 .photos img{width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid #233246;cursor:pointer}
@@ -75,17 +75,16 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .place{font-size:20px;font-weight:700;letter-spacing:.03em}
 .note{margin-top:8px;color:#c9d8ef}
 .cat{font-size:20px;font-weight:800;letter-spacing:.4em}
+
+/* Map Code 膠囊（黑色半透明） */
 .mapcode{
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
-  padding:12px 16px;
-  border-radius:22px;
-  background: rgba(0,0,0,0.50);  /* 車map code黑色半透明 */
-  /* border: 1px solid #d0d8e0;  淺灰邊框（如要可打開） */
+  display:inline-flex; align-items:center; gap:10px;
+  padding:12px 16px; border-radius:22px;
+  background: rgba(0,0,0,0.50);
 }
 .mapcode .car{font-size:20px}
 .mapcode .code{color:#ffd24a;font-weight:800;font-size:20px;letter-spacing:.05em}
+
 .badge{display:inline-block;margin-top:6px;color:#8fb6ff}
 a, a:visited{color:#2ea0ff}
 .map-wrap{position:relative}
@@ -101,7 +100,7 @@ a, a:visited{color:#2ea0ff}
 #lightbox button{background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.22);padding:8px 14px;font-size:16px;color:#fff;border-radius:10px;cursor:pointer}
 #lightbox button:hover{background:rgba(255,255,255,0.28)}
 
-/* === Popup：白色 0.72 + 深色字（桌機/手機一致） === */
+/* Popup：白 0.72 + 深色字 + 陰影，並留邊 */
 .leaflet-popup-content-wrapper{
   background: rgba(255,255,255,0.72) !important;
   border: 1px solid #d0d8e0;
@@ -112,15 +111,25 @@ a, a:visited{color:#2ea0ff}
   background: rgba(255,255,255,0.72) !important;
   border: 1px solid #d0d8e0;
 }
-.leaflet-popup-content{
-  margin: 8px 10px;
-  color: #25324a;
-  line-height: 1.6;
-}
+.leaflet-popup-content{ margin: 8px 10px; color:#25324a; line-height:1.6; }
 .popup-title{font-weight:800;font-size:18px;color:#0b1220;margin:0 0 6px}
 .popup-note{margin-top:6px;color:#42526e}
 .popup-link{margin-top:6px}
 .popup-link a{color:#2b6fff;text-decoration:underline}
+
+/* Map Code 複製按鈕 + Toast */
+.copy-btn{
+  margin-left: 8px; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12);
+  color:#fff; font-size:12px; cursor:pointer;
+}
+.copy-btn:hover{ background: rgba(255,255,255,.2); }
+#toast{
+  position: fixed; left:50%; bottom:24px; transform: translateX(-50%) translateY(20px);
+  background: rgba(0,0,0,.75); color:#fff; padding:10px 14px; border-radius:10px; font-size:14px;
+  opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease; z-index:99999;
+}
+#toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
 
 /* 手機：只縮小框與 chip，字體不變 */
 @media (max-width:520px){
@@ -132,6 +141,8 @@ a, a:visited{color:#2ea0ff}
 
   .mapcode{padding:6px 10px;border-radius:12px}
   .mapcode .code,.mapcode .car{font-size:18px}
+
+  .copy-btn{ padding:5px 8px; font-size:12px; }
 }
 </style>
 </head>
@@ -198,6 +209,9 @@ a, a:visited{color:#2ea0ff}
     </div>
   </div>
 
+  <!-- Toast 提示 -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ---------------- Utilities ----------------
@@ -243,7 +257,7 @@ function extractLatLngFromLink(link){
   return null;
 }
 
-// ======= Column map（別名）=======
+// 欄位別名
 const COL = {
   start:  ['start','開始','start_time','開始時間','時間起'],
   end:    ['end','結束','end_time','結束時間','時間迄'],
@@ -263,9 +277,9 @@ function get(r, key){
   return '';
 }
 
-/* 🔧 新增：更穩的關鍵字（中/英/日 + emoji） */
+/* ✅ 圖層偵測：加入「雨備」「備案」等，並把『圖層』欄位一起判斷 */
 const RESTROOM_RE = /(🚻|廁|公廁|洗手間|化妝室|トイレ|toilet|rest\s*room|wc)/i;
-const OPTIONAL_RE = /(可有可無|可選|optional|option|opt)/i;
+const OPTIONAL_RE = /(可有可無|可選|選擇性|雨備|雨天備案|雨天備用|備案|備用|備援|optional|option|opt)/i;
 
 // ---------------- Data files ----------------
 const FILE_TIMELINE = "timeline-2025-09-20_v6.csv";
@@ -358,11 +372,31 @@ function closeLightbox(){ document.getElementById('lightbox').style.display = 'n
 function showPrev(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex-1+currentPhotos.length)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 function showNext(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex+1)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 
-// 綁定 Lightbox 控制
-document.getElementById('close').onclick = closeLightbox;
-document.getElementById('prev').onclick = showPrev;
-document.getElementById('next').onclick = showNext;
-document.getElementById('lightbox').onclick = e=>{ if(e.target.id==='lightbox') closeLightbox(); };
+// Toast & Copy
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=> t.classList.remove('show'), 1600);
+}
+async function copyMapCode(place, code){
+  const text = `${place}：${code||''}`;
+  try{
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    showToast(`已複製：${text}`);
+  }catch(e){
+    console.warn(e);
+    showToast('複製失敗，請手動複製');
+  }
+}
 
 // 讓表格/照片牆也能把地圖聚焦到該點
 function focusTo(title){
@@ -387,7 +421,7 @@ Promise.all([
     Object.keys(coordOverride).forEach(k => { coordIndex[norm(k)] = coordOverride[k]; });
   }
 
-  // 讀照片 CSV（支援 image/對應地點 與 url/place）
+  // 讀照片 CSV
   if(csvPhotos){
     const rows = parseCSV(csvPhotos);
     rows.forEach(r=>{
@@ -415,6 +449,7 @@ Promise.all([
     const cat   = get(r,'category');
     const code  = get(r,'mapcode');
     const link  = get(r,'link') || '#';
+    const layer = get(r,'layer');   // 讀『圖層』欄位
     const seqStr = get(r,'seq');
     const seq = seqStr ? parseFloat(seqStr) : NaN;
 
@@ -423,9 +458,14 @@ Promise.all([
       const tr = el('tr','tr'); tr.style.cursor='pointer'; tr.onclick = ()=> focusTo(title);
       const td1 = el('td','td'); td1.style.width='110px'; td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
       const td2 = el('td','td');
-      td2.innerHTML = `<div class="place">${title||''}</div><div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>` + (note? `<div class="note">備註：${note}</div>`:'');
+      td2.innerHTML = `
+        <div class="place">${title||''}</div>
+        <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>
+        ${note? `<div class="note">備註：${note}</div>`:''}
+      `;
       const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
-      const td4 = el('td','td'); td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span></div>`;
+      const copyBtn = code ? `<button class="copy-btn" onclick="copyMapCode(${JSON.stringify(title)}, ${JSON.stringify(code)})">複製</button>` : ``;
+      const td4 = el('td','td'); td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span>${copyBtn}</div>`;
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tb.appendChild(tr);
     }
 
@@ -441,20 +481,19 @@ Promise.all([
       }
     }
 
-    /* 🔧 提醒：廁所沒有座標 → Console 列出，方便補 coords-override */
+    // 如果是廁所但沒座標，console 提醒
     if (!latlng) {
-      const maybeRest = RESTROOM_RE.test(title) || RESTROOM_RE.test(cat) || RESTROOM_RE.test(note);
-      if (maybeRest) {
-        console.warn('[缺座標的廁所項目]', { title, link, note });
-      }
-      return; // 沒座標就不放 marker
+      const maybeRest = RESTROOM_RE.test(title) || RESTROOM_RE.test(cat) || RESTROOM_RE.test(note) || RESTROOM_RE.test(layer);
+      if (maybeRest) console.warn('[缺座標的廁所項目]', { title, link, note });
+      return;
     }
 
-    // Marker + popup（使用 autoPanPadding 留邊距）
+    // Marker + popup
     const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
+    const popupCopyBtn = code ? `<button class="copy-btn" onclick="copyMapCode(${JSON.stringify(title)}, ${JSON.stringify(code)})">複製</button>` : ``;
     const popHtml = `
       <div class="popup-title">${title}</div>
-      ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span></div>`:''}
+      ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span>${popupCopyBtn}</div>`:''}
       ${note? `<div class="popup-note">${note}</div>`:''}
       <div class="popup-link"><a href="${link}" target="_blank">📍 Google 地圖</a></div>
     `;
@@ -465,23 +504,17 @@ Promise.all([
       autoPanPaddingBottomRight: [16,16]
     });
 
-    // 圖層判斷（先判廁所，再判可有可無）
-    const titleVal = String(get(r,'title')||'');
-    const catVal   = String(get(r,'category')||'');
-    const noteVal  = String(get(r,'note')||'');
+    // ✅ 圖層判斷（先廁所，再可有可無/雨備；同時看 title/category/note/圖層）
+    const titleVal = String(title||'');
+    const catVal   = String(cat||'');
+    const noteVal  = String(note||'');
+    const layerVal = String(layer||'');
 
     let targetGroup = gMain;
-    if (RESTROOM_RE.test(titleVal) || RESTROOM_RE.test(catVal) || RESTROOM_RE.test(noteVal)) {
+    if (RESTROOM_RE.test(titleVal) || RESTROOM_RE.test(catVal) || RESTROOM_RE.test(noteVal) || RESTROOM_RE.test(layerVal)) {
       targetGroup = gRest;
-      if (m.setZIndexOffset) m.setZIndexOffset(100); // 讓廁所點位稍微浮上
-      /* 如需專屬圖示，解除下行註解：
-      m.setIcon(L.divIcon({
-        className: 'restroom-pin',
-        html: '<div style="background:#2b6fff;color:#fff;border-radius:10px;padding:2px 6px;font-size:12px;line-height:1;">🚻</div>',
-        iconSize: [28, 18], iconAnchor: [14, 18], popupAnchor: [0, -10]
-      }));
-      */
-    } else if (OPTIONAL_RE.test(titleVal) || OPTIONAL_RE.test(catVal) || OPTIONAL_RE.test(noteVal)) {
+      if (m.setZIndexOffset) m.setZIndexOffset(100);
+    } else if (OPTIONAL_RE.test(titleVal) || OPTIONAL_RE.test(catVal) || OPTIONAL_RE.test(noteVal) || OPTIONAL_RE.test(layerVal)) {
       targetGroup = gOptional;
     }
     targetGroup.addLayer(m);
@@ -489,7 +522,7 @@ Promise.all([
     // 索引
     markerIndex[norm(title)] = m;
 
-    // 主行程連線
+    // 主行程連線（只連主行程）
     if (targetGroup === gMain) routeNodes.push({ seq, latlng });
   });
 
