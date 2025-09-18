@@ -60,7 +60,7 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .vbtn:active{transform:translateY(1px)}
 @supports (padding: max(0px)) { .vbtns{bottom:max(12px, env(safe-area-inset-bottom)); right:max(12px, env(safe-area-inset-right));} }
 
-/* 照片牆縮圖 */
+/* 照片牆縮圖（縮小版） */
 .photo-wall{background:var(--panel);border:1px solid #1f2b3a;border-radius:var(--radius);min-height:120px;padding:16px;margin-bottom:18px}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
 .photos img{width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid #233246;cursor:pointer}
@@ -75,16 +75,15 @@ header h1{font-size:34px;letter-spacing:.08em;margin:0 0 6px}
 .place{font-size:20px;font-weight:700;letter-spacing:.03em}
 .note{margin-top:8px;color:#c9d8ef}
 .cat{font-size:20px;font-weight:800;letter-spacing:.4em}
-
-/* Map Code 膠囊（黑色半透明） */
 .mapcode{
   display:inline-flex; align-items:center; gap:10px;
   padding:12px 16px; border-radius:22px;
-  background: rgba(0,0,0,0.50);
+  background: rgba(0,0,0,0.50); /* 黑色半透明 */
+  /* border:1px solid #d0d8e0;  想要邊框就打開 */
 }
 .mapcode .car{font-size:20px}
 .mapcode .code{color:#ffd24a;font-weight:800;font-size:20px;letter-spacing:.05em}
-
+.mapcode .copy{background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28); color:#fff; font-size:12px; padding:4px 8px; border-radius:10px; cursor:pointer}
 .badge{display:inline-block;margin-top:6px;color:#8fb6ff}
 a, a:visited{color:#2ea0ff}
 .map-wrap{position:relative}
@@ -100,7 +99,7 @@ a, a:visited{color:#2ea0ff}
 #lightbox button{background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.22);padding:8px 14px;font-size:16px;color:#fff;border-radius:10px;cursor:pointer}
 #lightbox button:hover{background:rgba(255,255,255,0.28)}
 
-/* Popup：白 0.72 + 深色字 + 陰影 */
+/* Popup：白色 0.72 + 深色字 */
 .leaflet-popup-content-wrapper{
   background: rgba(255,255,255,0.72) !important;
   border: 1px solid #d0d8e0;
@@ -111,38 +110,20 @@ a, a:visited{color:#2ea0ff}
   background: rgba(255,255,255,0.72) !important;
   border: 1px solid #d0d8e0;
 }
-.leaflet-popup-content{ margin: 8px 10px; color:#25324a; line-height:1.6; }
+.leaflet-popup-content{ margin:8px 10px; color:#25324a; line-height:1.6; }
 .popup-title{font-weight:800;font-size:18px;color:#0b1220;margin:0 0 6px}
 .popup-note{margin-top:6px;color:#42526e}
 .popup-link{margin-top:6px}
 .popup-link a{color:#2b6fff;text-decoration:underline}
 
-/* Map Code 複製按鈕 + Toast */
-.copy-btn{
-  margin-left: 8px; padding: 6px 10px; border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12);
-  color:#fff; font-size:12px; cursor:pointer;
-}
-.copy-btn:hover{ background: rgba(255,255,255,.2); }
-#toast{
-  position: fixed; left:50%; bottom:24px; transform: translateX(-50%) translateY(20px);
-  background: rgba(0,0,0,.75); color:#fff; padding:10px 14px; border-radius:10px; font-size:14px;
-  opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease; z-index:99999;
-}
-#toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
-
 /* 手機：只縮小框與 chip，字體不變 */
 @media (max-width:520px){
   .photos{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}
   .photos img{height:65px}
-
   .leaflet-popup-content-wrapper{padding:6px;border-radius:10px}
   .leaflet-popup-content{margin:6px 8px}
-
   .mapcode{padding:6px 10px;border-radius:12px}
   .mapcode .code,.mapcode .car{font-size:18px}
-
-  .copy-btn{ padding:5px 8px; font-size:12px; }
 }
 </style>
 </head>
@@ -191,7 +172,7 @@ a, a:visited{color:#2ea0ff}
             <th style="width:110px">時間</th>
             <th>地點 / 活動</th>
             <th style="width:72px">類別</th>
-            <th style="width:180px">車Map Code</th>
+            <th style="width:220px">車Map Code</th>
           </tr>
         </thead>
         <tbody id="timelineBody"></tbody>
@@ -208,9 +189,6 @@ a, a:visited{color:#2ea0ff}
       <button id="close" type="button">✕ 關閉</button>
     </div>
   </div>
-
-  <!-- Toast 提示 -->
-  <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -257,7 +235,7 @@ function extractLatLngFromLink(link){
   return null;
 }
 
-// 欄位別名
+// ======= Column 別名 =======
 const COL = {
   start:  ['start','開始','start_time','開始時間','時間起'],
   end:    ['end','結束','end_time','結束時間','時間迄'],
@@ -268,9 +246,8 @@ const COL = {
   lat:    ['lat','緯度'],
   lng:    ['lng','經度'],
   link:   ['google','gmap','map','link','Google 地圖','GoogleMap','📍 景點連結'],
-  layer:  ['圖層','layer','圖層分類'],
-  rest:   ['🚻 廁所','廁所','restroom','toilet','トイレ'],
-  seq:    ['順序','order','seq','序']
+  seq:    ['順序','order','seq','序'],
+  restroomCol: ['🚻 廁所','廁所']
 };
 function get(r, key){
   const keys = COL[key] || [];
@@ -278,9 +255,9 @@ function get(r, key){
   return '';
 }
 
-/* 關鍵字（只看「備註、類別」兩欄；rest 欄視為廁所） */
+/* 關鍵字（看備註、類別兩欄） */
+const OPTIONAL_RE = /(可有可無|可選|雨備|備援|optional|option|opt)/i;
 const RESTROOM_RE = /(🚻|廁|公廁|洗手間|化妝室|トイレ|toilet|rest\s*room|wc)/i;
-const OPTIONAL_RE = /(可有可無|可選|選擇性|雨備|雨天備案|雨天備用|備案|備用|備援|optional|option|opt)/i;
 
 // ---------------- Data files ----------------
 const FILE_TIMELINE = "timeline-2025-09-20_v6.csv";
@@ -298,12 +275,12 @@ const gMain = L.layerGroup().addTo(map);
 const gOptional = L.layerGroup().addTo(map);
 const gRest = L.layerGroup().addTo(map);
 
-// 收集主行程節點用來畫線
+// 收集主行程節點用來畫線（只收主行程）
 let routeNodes = [];
 let routeLine = null;
 
 // marker 索引（讓表格/照片牆互相定位）
-const markerIndex = {}; // norm(title) -> marker
+const markerIndex = {}; // norm(title) -> 代表 marker
 
 // UI layer toggles
 const cMain = document.getElementById('layer-main');
@@ -340,11 +317,9 @@ if (btnFollow) btnFollow.onclick = ()=>{
   alert('開始跟隨');
 };
 
-// Photos mapping + Lightbox 狀態
+// 照片 & Lightbox
 let photoMap = {}; // key(norm title) => [urls]
-let currentPhotos = [];
-let currentIndex = 0;
-
+let currentPhotos = []; let currentIndex = 0;
 function setPhotosForKey(key){
   const wrap = document.getElementById('photos'); 
   const empty = document.getElementById('emptyPhotos');
@@ -355,13 +330,10 @@ function setPhotosForKey(key){
   if(arr.length===0){ empty.style.display='block'; return; }
   empty.style.display='none';
   arr.forEach((u,i)=>{ 
-    const img = new Image(); 
-    img.loading="lazy"; img.decoding="async"; 
-    img.src=u; img.onclick=()=>openLightbox(i); 
+    const img = new Image(); img.loading="lazy"; img.decoding="async"; img.src=u; img.onclick=()=>openLightbox(i); 
     wrap.appendChild(img); 
   });
 }
-
 function openLightbox(index){
   currentIndex = index;
   const lb = document.getElementById('lightbox');
@@ -372,42 +344,12 @@ function openLightbox(index){
 function closeLightbox(){ document.getElementById('lightbox').style.display = 'none'; }
 function showPrev(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex-1+currentPhotos.length)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
 function showNext(){ if(currentPhotos.length===0) return; currentIndex = (currentIndex+1)%currentPhotos.length; document.getElementById('lightbox-img').src = currentPhotos[currentIndex]; }
+document.getElementById('close').onclick = closeLightbox;
+document.getElementById('prev').onclick = showPrev;
+document.getElementById('next').onclick = showNext;
+document.getElementById('lightbox').onclick = e=>{ if(e.target.id==='lightbox') closeLightbox(); };
 
-// Toast & Copy
-function showToast(msg){
-  const t = document.getElementById('toast');
-  if(!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(()=> t.classList.remove('show'), 1600);
-}
-async function copyMapCode(place, code){
-  const text = `${place}：${code||''}`;
-  try{
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      showToast(`已複製：${text}`);
-      return;
-    }
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position = 'fixed'; ta.style.top = '-1000px';
-    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
-    const ok = document.execCommand('copy'); document.body.removeChild(ta);
-    showToast(ok ? `已複製：${text}` : '複製失敗，請手動複製');
-  }catch(e){
-    console.warn(e);
-    showToast(window.isSecureContext ? '複製失敗，請手動複製' : '需要在 HTTPS 或本機伺服器執行，才能自動複製');
-  }
-}
-document.addEventListener('click', (ev)=>{
-  const btn = ev.target.closest('.copy-btn');
-  if (!btn) return;
-  ev.preventDefault(); ev.stopPropagation();
-  copyMapCode(btn.dataset.place, btn.dataset.code);
-});
-
-// 讓表格/照片牆也能把地圖聚焦到該點
+// 聚焦到地圖 + 照片
 function focusTo(title){
   const mk = markerIndex[norm(title)];
   if(mk){
@@ -418,25 +360,42 @@ function focusTo(title){
   setPhotosForKey(title);
 }
 
+// 文字複製（雙保險）
+function copyText(text){
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(()=> alert('已複製：\n' + text)).catch(()=>{
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      alert('已複製：\n' + text);
+    });
+  } else {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert('已複製：\n' + text);
+  }
+}
+
 // ---------------- Load data ----------------
 Promise.all([
   fetch(FILE_TIMELINE).then(r=>r.text()),
   fetch(FILE_PHOTOS).then(r=>r.ok?r.text():""),
   fetch(FILE_COORDS).then(r=>r.ok?r.json():{})
 ]).then(([csvTimeline,csvPhotos,coordOverride])=>{
-  // coords override 索引（名稱容錯）
+  // coords override 索引（名稱容錯 + 別名）
   const coordIndex = {};
   if (coordOverride && typeof coordOverride === 'object') {
     Object.keys(coordOverride).forEach(k => { coordIndex[norm(k)] = coordOverride[k]; });
+    // 別名：雨備(西友大船店) -> 西友 大船店
+    if (coordOverride['西友 大船店']) {
+      coordIndex[norm('雨備(西友大船店)')] = coordOverride['西友 大船店'];
+    }
   }
 
-  // 讀照片 CSV
+  // 讀照片 CSV（支援 image/對應地點 與 url/place）
   if(csvPhotos){
     const rows = parseCSV(csvPhotos);
     rows.forEach(r=>{
-      Object.keys(r).forEach(k=>{
-        const ck = k.replace(/^\ufeff/,''); if(ck!==k){ r[ck]=r[k]; delete r[k]; }
-      });
+      Object.keys(r).forEach(k=>{ const ck = k.replace(/^\ufeff/,''); if(ck!==k){ r[ck]=r[k]; delete r[k]; }});
       const kRaw = byKeys(r, ['key','Key','名稱','地點','place','title','對應地點']);
       const url  = byKeys(r, ['url','URL','link','image']);
       if(!kRaw || !url) return;
@@ -458,31 +417,24 @@ Promise.all([
     const cat   = get(r,'category');
     const code  = get(r,'mapcode');
     const link  = get(r,'link') || '#';
-    const restField = get(r,'rest'); // `🚻 廁所` 欄
     const seqStr = get(r,'seq');
     const seq = seqStr ? parseFloat(seqStr) : NaN;
 
-    // === 依規則判斷圖層（只看「備註、類別」；rest 欄有字即視為廁所） ===
-    const isOptional = OPTIONAL_RE.test(note) || OPTIONAL_RE.test(cat);
-    const isRestroom = !!restField || RESTROOM_RE.test(note) || RESTROOM_RE.test(cat);
+    // 判斷圖層（可同時多個）
+    const textForFlag = `${cat||''} ${note||''}`;
+    const isOptional = OPTIONAL_RE.test(textForFlag);
+    const isRest = RESTROOM_RE.test(textForFlag) || !!get(r,'restroomCol');
 
-    // 時間軸列
+    // 時間軸列（可點進地圖/照片；含複製）
     if (tb){
       const tr = el('tr','tr'); tr.style.cursor='pointer'; tr.onclick = ()=> focusTo(title);
       const td1 = el('td','td'); td1.style.width='110px'; td1.innerHTML = '<div class="time">'+toTimeBlock(start,end)+'</div>';
       const td2 = el('td','td');
-      td2.innerHTML = `
-        <div class="place">${title||''}</div>
-        <div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>
-        ${note? `<div class="note">備註：${note}</div>`:''}
-        ${isRestroom && restField ? `<div class="note">🚻 ${restField}</div>`:''}
-      `;
+      td2.innerHTML = `<div class="place">${title||''}</div><div class="badge">📍 <a href="${link}" target="_blank">Google 地圖</a></div>` + (note? `<div class="note">備註：${note}</div>`:'');
       const td3 = el('td','td'); td3.innerHTML = `<div class="cat">${(cat||'').replace(/\s/g,'')}</div>`;
       const td4 = el('td','td');
-      td4.innerHTML = `<div class="mapcode">
-          <span class="car">🚗</span><span class="code">${code||''}</span>
-          ${code ? `<button class="copy-btn" type="button" data-place="${(title||'').replace(/"/g,'&quot;')}" data-code="${(code||'').replace(/"/g,'&quot;')}">複製</button>` : ``}
-        </div>`;
+      const copyLabel = `${title||''}：${code||''}`;
+      td4.innerHTML = `<div class="mapcode"><span class="car">🚗</span><span class="code">${code||''}</span><button class="copy" type="button" onclick="event.stopPropagation(); copyText('${copyLabel.replace(/'/g,"\\'")}')">複製</button></div>`;
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tb.appendChild(tr);
     }
 
@@ -497,51 +449,47 @@ Promise.all([
         if (byLink) latlng = byLink;
       }
     }
-    if (!latlng) {
-      if (isOptional || isRestroom) console.warn('[缺座標的非主行程/廁所項目]', { title, link });
-      return;
-    }
+    if (!latlng) return; // 沒座標就不畫
 
-    // 建 marker + popup
-    const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
+    // 產生 popup 內容（含複製鈕）
+    const popupCopy = `${title||''}：${code||''}`.replace(/'/g,"\\'");
     const popHtml = `
-      <div class="popup-title">${title}</div>
-      ${code? `<div class="mapcode">
-          <span class="car">🚗</span><span class="code">${code}</span>
-          <button class="copy-btn" type="button" data-place="${(title||'').replace(/"/g,'&quot;')}" data-code="${(code||'').replace(/"/g,'&quot;')}">複製</button>
-        </div>`:''}
+      <div class="popup-title">${title||''}</div>
+      ${code? `<div class="mapcode"><span class="car">🚗</span><span class="code">${code}</span><button class="copy" type="button" onclick="copyText('${popupCopy}')">複製</button></div>`:''}
       ${note? `<div class="popup-note">${note}</div>`:''}
-      ${isRestroom && restField ? `<div class="popup-note">🚻 ${restField}</div>`:''}
       <div class="popup-link"><a href="${link}" target="_blank">📍 Google 地圖</a></div>
     `;
-    m.bindPopup(popHtml,{
-      closeButton:true,
-      autoPan:true,
-      autoPanPaddingTopLeft: [16,16],
-      autoPanPaddingBottomRight: [16,16]
-    });
 
-    // === 多重圖層掛載邏輯 ===
-    // 1) 廁所：一定加到廁所層
-    // 2) 可有可無：一定加到可有可無層
-    // 3) 主要行程：預設加；但如果是「可有可無」，就不加到主層
-    //    例外：若同時是廁所（你希望可同時三層顯示），則主層也要加
-    if (isRestroom) gRest.addLayer(m);
-    if (isOptional) gOptional.addLayer(m);
-    const addMain = (!isOptional) || (isRestroom && isOptional); // 可有可無→不主；但 可有可無+廁所→三層都要
-    if (addMain) gMain.addLayer(m);
+    // 建 marker 的小工廠（讓同一點可以出現在多個圖層）
+    const makeMarker = ()=>{
+      const m = L.marker(latlng, { title }).on('click', ()=> setPhotosForKey(title));
+      m.bindPopup(popHtml,{ closeButton:true, autoPan:true, autoPanPaddingTopLeft:[16,16], autoPanPaddingBottomRight:[16,16] });
+      return m;
+    };
 
-    // 讓廁所點位靠上層
-    if (isRestroom && m.setZIndexOffset) m.setZIndexOffset(100);
-
-    // 索引
-    markerIndex[norm(title)] = m;
-
-    // 主行程連線（只連主行程節點）
-    if (addMain) routeNodes.push({ seq, latlng });
+    // 主行程(預設)
+    let assignedToAny = false;
+    if (!isOptional && !isRest) {
+      const m = makeMarker(); gMain.addLayer(m); assignedToAny = true; routeNodes.push({ seq, latlng });
+      if (!markerIndex[norm(title)]) markerIndex[norm(title)] = m;
+    }
+    // 可有可無
+    if (isOptional) {
+      const m = makeMarker(); gOptional.addLayer(m); assignedToAny = true;
+      if (!markerIndex[norm(title)]) markerIndex[norm(title)] = m;
+    }
+    // 廁所
+    if (isRest) {
+      const m = makeMarker(); gRest.addLayer(m); assignedToAny = true;
+      if (!markerIndex[norm(title)]) markerIndex[norm(title)] = m;
+    }
+    // 若三者都不是（真的純主行程），上面第一段已加到主行程
+    if (!assignedToAny) {
+      // 已加到主行程
+    }
   });
 
-  // 畫主行程連線
+  // 畫主行程連線（只連主行程）
   routeNodes.sort((a,b)=>{
     const A = isNaN(a.seq) ? Number.POSITIVE_INFINITY : a.seq;
     const B = isNaN(b.seq) ? Number.POSITIVE_INFINITY : b.seq;
